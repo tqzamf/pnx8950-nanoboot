@@ -6,12 +6,23 @@ AS=mipsel-linux-gnu-as
 ASFLAGS=--fatal-warnings -mips32 -mabi=eabi -mgp32 -mno-shared -G0
 LD=mipsel-linux-gnu-ld
 LDFLAGS=-static -nostdlib -G0
+OC=mipsel-linux-gnu-objcopy
+NM=mipsel-linux-gnu-nm
+MKIMAGE=mkimage
 TARGETS=boot.elf
 
 all: $(TARGETS)
 
 clean:
 	rm -f *.o *~ $(TARGETS)
+
+uImage: boot.bin
+	$(MKIMAGE) -e 0x$$($(NM) boot.elf | awk '$$3=="_start"{print $$1}') \
+		-A mips -T standalone -C none -n 'NanoBoot' -a 0x84010000 \
+		-d boot.bin $@
+
+boot.bin: boot.elf
+	$(OC) -j .text -O binary $< $@
 
 boot.elf: start.o init.o main.o
 	$(LD) $(LDFLAGS) -o $@ -T boot.x $^
