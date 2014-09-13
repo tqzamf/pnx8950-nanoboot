@@ -60,7 +60,7 @@
 #define MTC0_DTAGHI(value)   MTC0(29, 2, value)
 #define DRAM_BASE     0x80000000
 
-int main(void) __attribute__((noreturn));
+void _main(void) __attribute__((noreturn));
 
 void _init(void) __attribute__((section(".init")));
 void _init(void) {
@@ -119,5 +119,5 @@ void _init(void) {
 	asm volatile("nop"::);
 
 	// ready to run C code in cached mode. enter main loop.
-	main();
+	_main();
 }
