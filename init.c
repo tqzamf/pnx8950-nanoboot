@@ -113,11 +113,18 @@ void _init(void) {
 	
 	// enable caches. instruction fetches might not immediately use the
 	// cache, but it should work anyway.
+	// need to make sure we don't do the mtc0 in the branch delay slot
+	// though; that's a bit TOO bold. 
 	MTC0_CONFIG(CFG_CACHEABLE);
-	// don't do the mtc0 in the branch delay slot though; that's a bit
-	// TOO bold.
-	asm volatile("nop"::);
 
 	// ready to run C code in cached mode. enter main loop.
-	_main();
+	// this over-complicated way of calling forces the compiler to jump
+	// using an absolute address, so that it runs in KSEG0 (ie. cached)
+	// even if the bootloader was started in KSEG1 (ie. uncached).
+	void (*__main)(void) = _main;
+	asm volatile("" : "=r" (__main) : "r" (__main));
+	__main();
+	// note: this code is so ugly it crashes the compiler. literally so;
+	// if __main is an uint32_t and not declared as an output operand,
+	// the above code actually causes an internal error in GCC 4.4.5...
 }
