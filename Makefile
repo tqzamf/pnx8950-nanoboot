@@ -17,8 +17,8 @@ clean:
 	rm -f *.o *~ $(TARGETS)
 
 uImage: boot.bin
-	$(MKIMAGE) -e 0x$$($(NM) boot.elf | awk '$$3=="_start"{print $$1}') \
-		-A mips -T standalone -C none -n 'NanoBoot' -a 0x84010000 \
+	$(MKIMAGE) -e $$($(NM) boot.elf | awk -f get-entry-point.awk) \
+		-A mips -O linux -T kernel -C none -n 'NanoBoot' -a 0xA4010000 \
 		-d boot.bin $@
 
 boot.bin: boot.elf
