@@ -21,11 +21,14 @@ uImage: boot.bin
 		-A mips -O linux -T kernel -C none -n 'NanoBoot' -a 0xA4010000 \
 		-d boot.bin $@
 
-boot.bin: boot.elf
+%.bin: %.elf
 	$(OC) -j .text -O binary $< $@
 
 boot.elf: start.o init.o main.o
 	$(LD) $(LDFLAGS) -o $@ -T boot.x $^
+
+test.elf: test.o
+	$(LD) $(LDFLAGS) -o $@ -T test.x $^
 
 %.o: %.S
 	$(AS) $(ASFLAGS) -o $@ $^
