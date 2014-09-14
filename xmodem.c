@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "hw.h"
 
-#define XMODEM_TIMEOUT TIMER_TIMEOUT(10000)
+#define XMODEM_TIMEOUT TIMER_TIMEOUT(1000)
 #define ACK 0x06
 #define NAK 0x15
 #define EOT 0x04
@@ -14,7 +14,7 @@ static uint8_t xmodem_ack, xmodem_block;
 // ~32 bytes
 export void xmodem_init(void) {
 	xmodem_ack = NAK;
-	xmodem_block = 1;
+	xmodem_block = 0;
 }
 
 // ~380 bytes
@@ -31,10 +31,15 @@ export uint32_t xmodem_get_block(uint8_t *base) {
 		
 		switch (pos) {
 		case 0:
-			//header = ch;
-			if (ch == EOT)
-				// there'll be no more blocks; signal EOF
+			if (ch == EOT) {
+				// there'll be no more blocks; signal EOF. try to ack the
+				// packet here, but we only have a single attempt at that.
+				// there is no possibility to retry if that ACK is lost:
+				// if all goes well, the received image will be running
+				// by the time any retried EOTs arrive!
+				UART_TX(ACK);
 				return 0;
+			}
 			if (ch != SOH)
 				// wrong header, or 1k blocks
 				return -1;
@@ -55,7 +60,7 @@ export uint32_t xmodem_get_block(uint8_t *base) {
 		}
 	}
 
-	if (block != ~invblock)
+	if (block != (uint8_t) ~invblock)
 		// block number corrupted
 		return -1;
 	if (block == xmodem_block) {
@@ -64,7 +69,7 @@ export uint32_t xmodem_get_block(uint8_t *base) {
 		xmodem_ack = ACK;
 		return -1;
 	}
-	if (block != xmodem_block + 1)
+	if (block != (uint8_t) (xmodem_block + 1))
 		// wrong block number
 		return -1;
 
@@ -75,5 +80,5 @@ export uint32_t xmodem_get_block(uint8_t *base) {
 	// correct block received; next one please
 	xmodem_block = block;
 	xmodem_ack = ACK;
-	return 0;
+	return 128;
 }
