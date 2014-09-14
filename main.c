@@ -30,7 +30,7 @@ static inline uint32_t get_block(uint8_t *base) {
 static inline void call_image(void) {
 	// disable cache so that the image runs uncached. this simplifies
 	// coherency and allows it to mess with the caches. the LED control
-	// serves the dual purose of filling any hazard slots that might
+	// serves the dual purpose of filling any hazard slots that might
 	// exist.
 	cache_disable();
 	LEDS_SET(1, 0);
@@ -62,7 +62,7 @@ static inline void load_and_call_image(void) {
 		// harmless on flash, and gives xmodem a chance to end the
 		// transfer cleanly.
 
-		uint32_t res = get_block(base);
+		int16_t res = get_block(base);
 		if (res == 0)
 			// end of file. stop reading; there is nothing more to read.
 			break;

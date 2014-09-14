@@ -18,7 +18,7 @@ export void xmodem_init(void) {
 }
 
 // ~380 bytes
-export uint32_t xmodem_get_block(uint8_t *base) {
+export int16_t xmodem_get_block(uint8_t *base) {
 	UART_TX(xmodem_ack);
 	xmodem_ack = NAK;
 	register uint32_t timeout_start = TIMER_START();
