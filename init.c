@@ -1,64 +1,5 @@
 #include <stdint.h>
-
-#define MFC0(reg, sel) \
-	({ uint32_t res; \
-		asm volatile( \
-			"mfc0 %0, $%1, %2\n\t" \
-			: "=r" (res) \
-			: "i" (reg), "i" (sel)); \
-		res; \
-	})
-#define MTC0(reg, sel, value) \
-	do { \
-		asm volatile( \
-			"mtc0 %z0, $%1, %2\n\t" \
-			: \
-			: "Jr" ((unsigned int)(value)), "i" (reg), "i" (sel)); \
-	} while (0)
-
-#define ICACHE_LINE 32
-#define ICACHE_ENTRIES (256*2)
-#define ICACHE_INDEX_STORE_TAG(index) \
-	do { \
-		asm volatile( \
-			"cache 0x08, 0(%z0)\n\t" \
-			: \
-			: "Jr" ((unsigned int)(index))); \
-	} while (0)
-#define DCACHE_LINE 32
-#define DCACHE_ENTRIES (128*4)
-#define DCACHE_INDEX_STORE_TAG(index) \
-	do { \
-		asm volatile( \
-			"cache 0x09, 0(%z0)\n\t" \
-			: \
-			: "Jr" ((unsigned int)(index))); \
-	} while (0)
-
-#define MTC0_CONFIG(value)   MTC0(16, 0, value)
-#define CFG_UNCACHED  2
-#define CFG_CACHEABLE 3
-#define MTC0_CAUSE(value)    MTC0(13, 0, value)
-#define MFC0_STATUS()        MFC0(12, 0)
-#define MTC0_STATUS(value)   MTC0(12, 0, value)
-#define ST0_CU0       0x10000000
-#define ST0_IE        0x00000001
-#define ST0_EXL       0x00000002
-#define ST0_ERL       0x00000004
-#define ST0_KSU       0x00000018
-#define MFC0_CONFIGPR()      MFC0(16, 7)
-#define MTC0_CONFIGPR(value) MTC0(16, 7, value)
-#define CPR_TLB       (1 << 19)
-#define CPR_MAP       (1 << 20)
-#define CPR_T1        (1 << 3)
-#define CPR_T2        (1 << 4)
-#define CPR_T3        (1 << 5)
-#define CPR_VALID     0x3F1F41FF    /* valid bits to write to ConfigPR */
-#define MTC0_TAGLO(value)    MTC0(28, 0, value)
-#define MTC0_TAGHI(value)    MTC0(29, 0, value)
-#define MTC0_DTAGLO(value)   MTC0(28, 2, value)
-#define MTC0_DTAGHI(value)   MTC0(29, 2, value)
-#define DRAM_BASE     0x80000000
+#include "cache.h"
 
 void _main(void) __attribute__((noreturn));
 
@@ -73,7 +14,7 @@ void _init(void) {
 	// disable cache. it should be disabled by default, but make sure it
 	// really is. if we initialize it while it's enabled, we risk massive
 	// cache corruption.
-	MTC0_CONFIG(CFG_UNCACHED);
+	cache_disable();
 	MTC0_TAGLO(0);
 	MTC0_TAGHI(0);
 	// these two are probably unnecessary unless there are separate D
@@ -115,7 +56,7 @@ void _init(void) {
 	// cache, but it should work anyway.
 	// need to make sure we don't do the mtc0 in the branch delay slot
 	// though; that's a bit TOO bold. 
-	MTC0_CONFIG(CFG_CACHEABLE);
+	cache_enable();
 
 	// ready to run C code in cached mode. enter main loop.
 	// this over-complicated way of calling forces the compiler to jump
