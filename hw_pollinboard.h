@@ -2,6 +2,8 @@
 
 #define _GPIO_BASE 0xBBF04000
 #define _GPIO_TIMER (*((volatile uint32_t *) (_GPIO_BASE + 0x0C0)))
+#define _GPIO_LEDS2 (*((volatile uint32_t *) (_GPIO_BASE + 0x018)))
+#define _GPIO_LEDS1 (*((volatile uint32_t *) (_GPIO_BASE + 0x01C)))
 #define _UART_BASE 0xBBE4A000
 #define _UART_CONTROL  (*((volatile uint32_t *) (_UART_BASE + 0x000)))
 #define _UART_STATUS   (*((volatile uint32_t *) (_UART_BASE + 0x028)))
@@ -46,10 +48,10 @@
  */
 #if 1
 #define UART_TX(ch) \
-	{ \
+	do { \
 		_UART_STATUS = ch; \
 		while (((_UART_STATUS >> 16) & 31) != 0); \
-	}
+	} while (0)
 #else
 static void UART_TX(uint8_t ch) __attribute__((noinline));
 static void UART_TX(uint8_t ch) {
@@ -69,7 +71,7 @@ static void UART_TX(uint8_t ch) {
  */
 #define UART_RX_TIMEOUT(start, timeout) \
 	({ \
-		do {\
+		do { \
 			if (TIMER_TIMED_OUT(start, timeout)) \
 				return -1; \
 		} while (((_UART_STATUS >> 8) & 31) == 0); \
@@ -77,3 +79,16 @@ static void UART_TX(uint8_t ch) {
 		_UART_CONTROL = (1 << 16) | (1 << 24); \
 		ch; \
 	})
+
+
+/****** LED control using GPIO ******/
+/**
+ * controls the state of the CPU status LEDs.
+ * 
+ * @param red if 1, the red LED is turned on; else it is turned off
+ * @param green if 1, the greeen LED is turned on; else it is turned off
+ */
+#define LEDS_SET(red, green) \
+	do { \
+		_GPIO_LEDS1 = 0x11000000 | (green ? 0 : 0x1000) | (red ? 0 : 0x100); \
+	} while (0)
