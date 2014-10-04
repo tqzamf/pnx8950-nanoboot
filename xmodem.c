@@ -2,6 +2,7 @@
 #include "hw.h"
 
 #define XMODEM_TIMEOUT TIMER_TIMEOUT(1000)
+#define XMODEM_LONG_TIMEOUT TIMER_TIMEOUT(10000)
 #define ACK 0x06
 #define NAK 0x15
 #define EOT 0x04
@@ -10,20 +11,27 @@
 #define CRC 'C'
 
 static uint8_t xmodem_ack, xmodem_block;
+static uint32_t xmodem_timeout;
 
-// ~32 bytes
 export void xmodem_init(void) {
 	xmodem_ack = NAK;
 	xmodem_block = 0;
 }
 
-// ~380 bytes
-export int16_t xmodem_get_block(uint8_t *base) {
+export int16_t xmodem_get_block(uint8_t *base, int in_header) {
+	// if there was no useable block for 10s, give up and try again.
+	// don't do that while waiting for the header, though.
+	if (in_header)
+		xmodem_timeout = TIMER_START();
+	if (TIMER_TIMED_OUT(xmodem_timeout, XMODEM_LONG_TIMEOUT))
+		return -2;
+
 	UART_TX(xmodem_ack);
 	xmodem_ack = NAK;
 	register uint32_t timeout_start = TIMER_START();
 	
-	// OUCH. but it does get rid of the "uninitialized" warning.
+	// self-initialization. OUCH. but it does get rid of the
+	// "uninitialized variable" warning.
 	uint8_t block = block, invblock = invblock;
 	uint8_t checksum = 0;
 	for (uint8_t pos = 0; pos <= 128 + 3; pos++) {
@@ -59,7 +67,7 @@ export int16_t xmodem_get_block(uint8_t *base) {
 			break;
 		}
 	}
-
+	
 	if (block != (uint8_t) ~invblock)
 		// block number corrupted
 		return -1;
@@ -70,7 +78,7 @@ export int16_t xmodem_get_block(uint8_t *base) {
 		return -1;
 	}
 	if (block != (uint8_t) (xmodem_block + 1))
-		// wrong block number
+		// wrong block number.
 		return -1;
 
 	if (checksum != 0)
@@ -80,5 +88,6 @@ export int16_t xmodem_get_block(uint8_t *base) {
 	// correct block received; next one please
 	xmodem_block = block;
 	xmodem_ack = ACK;
+	xmodem_timeout = TIMER_START();
 	return 128;
 }

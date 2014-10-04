@@ -19,9 +19,9 @@ struct __attribute__((packed)) image_header {
 
 static uint8_t xmodem_enabled;
 
-static inline uint32_t get_block(uint8_t *base) {
+static inline uint32_t get_block(uint8_t *base, int in_header) {
 	if (xmodem_enabled)
-		return xmodem_get_block(base);
+		return xmodem_get_block(base, in_header);
 	else
 		// dummy: read from NAND
 		return 0;
@@ -56,16 +56,21 @@ static inline void load_and_call_image(void) {
 		// we intentionally try to read "beyond" end of file. this is
 		// harmless on flash, and gives xmodem a chance to end the
 		// transfer cleanly.
+		int in_header = ((uint32_t) data_end) == INFINITY;
 
-		int16_t res = get_block(base);
+		int16_t res = get_block(base, in_header);
 		if (res == 0)
 			// end of file. stop reading; there is nothing more to read.
 			break;
+		if (res == -2 && !in_header)
+			// serious error. don't retry, except while waiting for the
+			// header.
+			return;
 		if (res < 0)
 			// invalid block. try again.
 			continue;
 		
-		if (((uint32_t) data_end) != INFINITY)
+		if (!in_header)
 			// got a good data block; next one, please!
 			base += res;
 		else if (header->signature1 == IMAGE_HEADER_SIGNATURE
