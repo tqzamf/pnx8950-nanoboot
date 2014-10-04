@@ -26,6 +26,10 @@ export int16_t xmodem_get_block(uint8_t *base, int in_header) {
 	if (TIMER_TIMED_OUT(xmodem_timeout, XMODEM_LONG_TIMEOUT))
 		return -2;
 
+	// no need to flush here. the RX will wait until the sender is
+	// actually sending something, which it won't do before having
+	// received the ACK. there won't be an overflow either because
+	// ACKs are sent only every 132 bytes, and NAKs only once a second.
 	UART_TX(xmodem_ack);
 	xmodem_ack = NAK;
 	register uint32_t timeout_start = TIMER_START();
@@ -45,7 +49,10 @@ export int16_t xmodem_get_block(uint8_t *base, int in_header) {
 				// there is no possibility to retry if that ACK is lost:
 				// if all goes well, the received image will be running
 				// by the time any retried EOTs arrive!
+				// here we have to flush, in case the image reconfigures
+				// the UART.
 				UART_TX(ACK);
+				UART_FLUSH();
 				return 0;
 			}
 			if (ch != SOH)

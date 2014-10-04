@@ -50,12 +50,23 @@
 #define UART_TX(ch) \
 	do { \
 		_UART_STATUS = ch; \
-		while (((_UART_STATUS >> 16) & 31) != 0); \
 	} while (0)
 #else
 static void UART_TX(uint8_t ch) __attribute__((noinline));
 static void UART_TX(uint8_t ch) {
 	_UART_STATUS = ch;
+}
+#endif
+
+/**
+ * waits until the UART output buffer is empty.
+ */
+#if 1
+#define UART_FLUSH(ch) \
+	while (((_UART_STATUS >> 16) & 31) != 0)
+#else
+static void UART_FLUSH(uint8_t ch) __attribute__((noinline));
+static void UART_FLUSH(uint8_t ch) {
 	while (((_UART_STATUS >> 16) & 31) != 0);
 }
 #endif

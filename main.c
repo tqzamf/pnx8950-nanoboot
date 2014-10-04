@@ -92,7 +92,11 @@ void _main(void) {
 	for (;;) {
 		load_and_call_image();
 		
+		// send "prompt" and turn on the green LED to signal that
+		// nanoboot is ready for Xmodem data.
 		LEDS_SET(0, 1);
+		UART_TX('\n');
+		UART_TX('X');
 		xmodem_enabled = 1;
 		xmodem_init();
 	}
