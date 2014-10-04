@@ -9,7 +9,7 @@ LDFLAGS=-static -nostdlib -G0
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.elf
+TARGETS=boot.bin uImage
 
 all: $(TARGETS)
 
