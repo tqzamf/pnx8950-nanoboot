@@ -30,22 +30,9 @@ void _init(void) {
 	configPR |= CPR_T1 | CPR_T2 | CPR_T3;
 	MTC0_CONFIGPR(configPR);
 
-	// initialize cache (instruction and data). do it in a single loop
-	// if possible to spave some space.
-#if (ICACHE_ENTRIES == DCACHE_ENTRIES) && (ICACHE_LINE == DCACHE_LINE)
-	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
-			index += ICACHE_LINE) {
-		ICACHE_INDEX_STORE_TAG(index);
-		DCACHE_INDEX_STORE_TAG(index);
-	}
-#else
-	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
-			index += ICACHE_LINE)
-		ICACHE_INDEX_STORE_TAG(index);
-	for (uint32_t index = 0; index < DCACHE_LINE * DCACHE_ENTRIES - 1;
-			index += DCACHE_LINE)
-		DCACHE_INDEX_STORE_TAG(index);
-#endif
+	// initialize and flush cache.
+	cache_init();
+	cache_flush();
 	
 	// perform a dummy read to initialize some latches, or something.
 	// this probably isn't needed but we have some hazard cycles to kill

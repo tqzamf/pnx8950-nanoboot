@@ -28,12 +28,26 @@
 			: \
 			: "Jr" ((unsigned int)(index))); \
 	} while (0)
+#define ICACHE_INDEX_INVALIDATE(index) \
+	do { \
+		asm volatile( \
+			"cache 0x00, 0(%z0)\n\t" \
+			: \
+			: "Jr" ((unsigned int)(index))); \
+	} while (0)
 #define DCACHE_LINE 32
 #define DCACHE_ENTRIES (128*4)
 #define DCACHE_INDEX_STORE_TAG(index) \
 	do { \
 		asm volatile( \
 			"cache 0x09, 0(%z0)\n\t" \
+			: \
+			: "Jr" ((unsigned int)(index))); \
+	} while (0)
+#define DCACHE_INDEX_INVALIDATE_WRITEBACK(index) \
+	do { \
+		asm volatile( \
+			"cache 0x01, 0(%z0)\n\t" \
 			: \
 			: "Jr" ((unsigned int)(index))); \
 	} while (0)
@@ -70,6 +84,44 @@ static inline void cache_enable(void) {
 
 static inline void cache_disable(void) {
 	MTC0_CONFIG(CFG_UNCACHED);
+}
+
+static inline void cache_init(void) {
+	// initialize cache (instruction and data). do it in a single loop
+	// if possible to spave some space.
+#if (ICACHE_ENTRIES == DCACHE_ENTRIES) && (ICACHE_LINE == DCACHE_LINE)
+	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
+			index += ICACHE_LINE) {
+		ICACHE_INDEX_STORE_TAG(index);
+		DCACHE_INDEX_STORE_TAG(index);
+	}
+#else
+	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
+			index += ICACHE_LINE)
+		ICACHE_INDEX_STORE_TAG(index);
+	for (uint32_t index = 0; index < DCACHE_LINE * DCACHE_ENTRIES - 1;
+			index += DCACHE_LINE)
+		DCACHE_INDEX_STORE_TAG(index);
+#endif
+}
+
+static inline void cache_flush(void) {
+	// invalidate cache (instruction and data). do it in a single loop
+	// if possible to spave some space.
+#if (ICACHE_ENTRIES == DCACHE_ENTRIES) && (ICACHE_LINE == DCACHE_LINE)
+	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
+			index += ICACHE_LINE) {
+		ICACHE_INDEX_INVALIDATE(index);
+		DCACHE_INDEX_INVALIDATE_WRITEBACK(index);
+	}
+#else
+	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
+			index += ICACHE_LINE)
+		ICACHE_INDEX_INVALIDATE(index);
+	for (uint32_t index = 0; index < DCACHE_LINE * DCACHE_ENTRIES - 1;
+			index += DCACHE_LINE)
+		DCACHE_INDEX_INVALIDATE_WRITEBACK(index);
+#endif
 }
 
 #endif
