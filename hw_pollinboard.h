@@ -4,6 +4,7 @@
 #define _GPIO_TIMER (*((volatile uint32_t *) (_GPIO_BASE + 0x0C0)))
 #define _GPIO_LEDS2 (*((volatile uint32_t *) (_GPIO_BASE + 0x018)))
 #define _GPIO_LEDS1 (*((volatile uint32_t *) (_GPIO_BASE + 0x01C)))
+#define _GPIO_SW11  (*((volatile uint32_t *) (_GPIO_BASE + 0x01C)))
 #define _UART_BASE 0xBBE4A000
 #define _UART_CONTROL  (*((volatile uint32_t *) (_UART_BASE + 0x000)))
 #define _UART_STATUS   (*((volatile uint32_t *) (_UART_BASE + 0x028)))
@@ -98,7 +99,7 @@ static void UART_FLUSH(uint8_t ch) {
 	})
 
 
-/****** LED control using GPIO ******/
+/****** LED control / switch status using GPIO ******/
 /**
  * controls the state of the CPU status LEDs.
  * 
@@ -109,6 +110,14 @@ static void UART_FLUSH(uint8_t ch) {
 	do { \
 		_GPIO_LEDS1 = 0x11000000 | (green ? 0 : 0x1000) | (red ? 0 : 0x100); \
 	} while (0)
+
+/**
+ * reads the state of DIP switch SW1, position 1 (left switch).
+ *
+ * @return 0 if the switch is off, 1 if it is on
+ */
+#define SW11_STATUS() \
+	(_GPIO_SW11 & 0x10)
 
 
 /****** XIO NAND flash interface ******/

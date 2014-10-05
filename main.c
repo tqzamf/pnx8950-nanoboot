@@ -23,9 +23,13 @@ static uint8_t xmodem_enabled;
 static inline uint32_t get_block(uint8_t *base, int in_header) {
 	if (xmodem_enabled)
 		return xmodem_get_block(base, in_header);
-	else
-		// TODO skip NAND if SW1 = on
+	else if (SW11_STATUS() == 0)
+		// SW1.1 is off. try reading the flash.
 		return nand_get_block(base, in_header);
+	else
+		// skip NAND reading if SW1.1 = on, to allow recovery from an
+		// image that loads properly but crashes.
+		return -2;
 }
 
 static inline void call_image(void) {
