@@ -5,6 +5,7 @@
 #include "hw.h"
 #include "cache.h"
 #include "xmodem.c"
+#include "nand.c"
 
 #define IMAGE_LOAD_ADDR     (DRAM_BASE | 0x01000000)
 #define IMAGE_ENTRY_POINT   (DRAM_BASE | 0x01000000)
@@ -23,8 +24,8 @@ static inline uint32_t get_block(uint8_t *base, int in_header) {
 	if (xmodem_enabled)
 		return xmodem_get_block(base, in_header);
 	else
-		// dummy: read from NAND
-		return 0;
+		// TODO skip NAND if SW1 = on
+		return nand_get_block(base, in_header);
 }
 
 static inline void call_image(void) {
@@ -38,7 +39,7 @@ static inline void call_image(void) {
 	void (*image)(void) = (void *) IMAGE_ENTRY_POINT;
 	asm volatile("" : "=r" (image) : "r" (image));
 	image();
-	
+
 	// we only ever get here when the image returns, which it doesn't
 	// generally do. however, we permit returning to the bootloader so
 	// that images can extend the bootloader.
@@ -51,7 +52,7 @@ static inline void load_and_call_image(void) {
 	struct image_header *header = (void *) HEADER_BASE;
 	uint8_t *base = HEADER_BASE;
 	uint8_t *data_end = (void *) INFINITY;
-	
+
 	while (((uint32_t) base) < (((uint32_t) data_end) + 128)) {
 		// we intentionally try to read "beyond" end of file. this is
 		// harmless on flash, and gives xmodem a chance to end the
@@ -62,14 +63,16 @@ static inline void load_and_call_image(void) {
 		if (res == 0)
 			// end of file. stop reading; there is nothing more to read.
 			break;
-		if (res == -2 && !in_header)
-			// serious error. don't retry, except while waiting for the
-			// header.
+		if (res == -2)
+			// serious error or end of file condition. don't retry.
+			// if this happens while waiting for the header, the normal
+			// fallback will start receiving an image over xmodem,
+			// thereby retrying xmodem but not flash reads.
 			return;
 		if (res < 0)
 			// invalid block. try again.
 			continue;
-		
+
 		if (!in_header)
 			// got a good data block; next one, please!
 			base += res;
@@ -89,12 +92,15 @@ static inline void load_and_call_image(void) {
 
 void _main(void) __attribute__((noreturn, section(".init")));
 void _main(void) {
+	nand_init();
+
 	for (;;) {
 		load_and_call_image();
-		
+
 		// send "prompt" and turn on the green LED to signal that
 		// nanoboot is ready for Xmodem data.
 		LEDS_SET(0, 1);
+		UART_TX('\r');
 		UART_TX('\n');
 		UART_TX('X');
 		xmodem_enabled = 1;

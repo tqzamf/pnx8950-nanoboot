@@ -9,6 +9,12 @@
 #define _UART_STATUS   (*((volatile uint32_t *) (_UART_BASE + 0x028)))
 #define _RESET_BASE 0xBBE60000
 #define _RESET_CONTROL (*((volatile uint32_t *) (_RESET_BASE + 0x000)))
+#define _XIO_BASE 0xBBE40000
+#define _XIO_FLASH_CONTROL (*((volatile uint32_t *) (_XIO_BASE + 0x830)))
+#define _XIO_FLASH_COMMAND (*((volatile uint16_t *) (_XIO_BASE + 0x830)))
+#define _XIO_FLASH_OPER    (*((volatile uint16_t *) (_XIO_BASE + 0x832)))
+#define FLASH_BASE ((volatile uint8_t *) 0xB0000000)
+#define FLASH_END ((volatile uint8_t *) 0xB3FFFFFF)
 
 /****** timeout timer using GPIO timestamp timer ******/
 /**
@@ -102,4 +108,37 @@ static void UART_FLUSH(uint8_t ch) {
 #define LEDS_SET(red, green) \
 	do { \
 		_GPIO_LEDS1 = 0x11000000 | (green ? 0 : 0x1000) | (red ? 0 : 0x100); \
+	} while (0)
+
+
+/****** XIO NAND flash interface ******/
+/**
+ * selects OOB read, and configures the XIO interface to perform full
+ * reads with 1 command and 4 address cycles.
+ */
+#define XIO_SELECT_OOB() \
+	do { \
+		_XIO_FLASH_CONTROL = 0x00370050; \
+	} while (0)
+
+/**
+ * selects main memory read of the given half-page. leaves the XIO
+ * interface in whatever state it is.
+ *
+ * @param x address bit A8 (0x100)
+ */
+#define XIO_SELECT_BLOCK(x) \
+	do { \
+		/*_XIO_FLASH_CONTROL = 0x00370000 + ((x) & 1);*/ \
+		_XIO_FLASH_COMMAND = (x) & 1; \
+	} while (0)
+
+/**
+ * reconfigures the XIO interface to perform short reads without any
+ * command or address cycles. the flash will respond with sequential
+ * bytes until the end of the current page.
+ */
+ #define XIO_SELECT_SEQUENTIAL() \
+	do { \
+		_XIO_FLASH_OPER = 0x0030; \
 	} while (0)
