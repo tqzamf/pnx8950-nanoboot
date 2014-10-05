@@ -54,11 +54,13 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 		b2 = nand_base[7];
 	}
 
-	// select the correct half-page and read its first byte using full
+	// select the correct half-page and read its first 4 bytes using full
 	// command-and-address cycles. this is really just meant to load the
 	// registers in the flash chip; the byte falls out as a byproduct.
 	XIO_SELECT_BLOCK(halfpage);
-	base[0] = *nand_base;
+	volatile uint32_t *nand_page = ((volatile uint32_t *) nand_base);
+	uint32_t *buffer = ((uint32_t *) base);
+	buffer[0] = *nand_page;
 	// address and command are now set; no need to send them again for
 	// each byte. the flash will provide bytes sequentially until the
 	// end of the current page.
@@ -68,8 +70,11 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// it also means that we don't have to increment the nand address
 	// because it isn't sent anyway.
 	XIO_SELECT_SEQUENTIAL();
-	for (uint32_t pos = 1; pos < 256; pos++) {
-		base[pos] = *nand_base;
+	for (uint32_t pos = 1; pos < 256/4; pos++)
+		// TODO should probably use 32-bit copy here, for improved efficiency
+		buffer[pos] = *nand_page;
+
+	for (uint32_t pos = 0; pos < 256; pos++) {
 		// TODO calculate ECC
 	}
 
