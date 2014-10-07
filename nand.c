@@ -29,7 +29,6 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// end of file! we read 64MB of data and found nothing...
 	if (nand_base > FLASH_END) {
 		UART_TX('E');
-		// FIXME in header, this deadlocks!
 		return -2;
 	}
 
@@ -71,7 +70,6 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// because it isn't sent anyway.
 	XIO_SELECT_SEQUENTIAL();
 	for (uint32_t pos = 1; pos < 256/4; pos++)
-		// TODO should probably use 32-bit copy here, for improved efficiency
 		buffer[pos] = *nand_page;
 
 	for (uint32_t pos = 0; pos < 256; pos++) {
