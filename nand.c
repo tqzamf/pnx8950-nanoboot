@@ -31,7 +31,7 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	if (nand_base > FLASH_END)
 		return -2;
 
-	if ((block & 0x1f) == 0) {
+	if ((block & 0x3f) == 0) {
 		if (in_header)
 			UART_TX(' ');
 		else
@@ -52,8 +52,9 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 		// ~59x.
 		// so the progress output is limited more by terminal scroll rate
 		// than by UART speed. U-Boot takes ~256k, or 512 half-pages.
-		// printing a dot every 32 pages yields a comfortable 32 dots
-		// for loading all of U-Boot.
+		// printing a dot every 64 pages yields a comfortable 16 dots
+		// for loading all of U-Boot, and a convenient single space for
+		// the FlashReader preceding it.
 	}
 
 	// read OOB area first. selecting it is intentionally done in such a
