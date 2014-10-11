@@ -124,4 +124,21 @@ static inline void cache_flush(void) {
 #endif
 }
 
+#define MTC0_CMEM(x, base, size, enable) \
+	MTC0(22, (x) + 4, (base) | ((size) << 1) | ((enable) ? 1 : 0))
+#define CMEM_SIZE_1M   0
+#define CMEM_SIZE_2M   1
+#define CMEM_SIZE_4M   2
+#define CMEM_SIZE_8M   3
+#define CMEM_SIZE_16M  4
+#define CMEM_SIZE_32M  5
+#define CMEM_SIZE_64M  6
+#define CMEM_SIZE_128M 7
+#define CMEM_XIO_BASE  0x10000000
+#define CMEM_XIO_SIZE  CMEM_SIZE_128M
+#define CMEM_MMIO_BASE 0x1BE00000
+#define CMEM_MMIO_SIZE CMEM_SIZE_2M
+#define CMEM_PCI_BASE  0x1c000000
+#define CMEM_PCI_SIZE  CMEM_SIZE_32M
+
 #endif
