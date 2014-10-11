@@ -14,8 +14,8 @@
 #define _XIO_FLASH_CONTROL (*((volatile uint32_t *) (_XIO_BASE + 0x830)))
 #define _XIO_FLASH_COMMAND (*((volatile uint16_t *) (_XIO_BASE + 0x830)))
 #define _XIO_FLASH_OPER    (*((volatile uint16_t *) (_XIO_BASE + 0x832)))
-#define FLASH_BASE ((volatile uint8_t *) 0xB0000000)
-#define FLASH_END ((volatile uint8_t *) 0xB3FFFFFF)
+#define FLASH_BASE ((volatile uint32_t *) 0xB0000000)
+#define FLASH_END ((volatile uint32_t *) 0xB3FFFFFF)
 
 /****** timeout timer using GPIO timestamp timer ******/
 /**

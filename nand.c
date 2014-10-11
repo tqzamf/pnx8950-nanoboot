@@ -1,27 +1,36 @@
 #include <stdint.h>
 #include "hw.h"
+#include "ecc.c"
 
-static volatile uint8_t *nand_base;
-static uint8_t nand_status;
+static volatile uint32_t *nand_base;
+static uint32_t nand_num_errors;
 
 export void nand_init(void) {
-	nand_base = FLASH_BASE - 256;
-	nand_status = '_';
-}
-
-static inline void nand_set_status(uint8_t status) {
-	if (nand_status > status)
-		nand_status = status;
+	nand_base = (void *) (FLASH_BASE - 256);
+	// no need to initialize nand_num_errors here. it's ignored while in
+	// the header, and it takes a valid block to get out of the header.
+	// nand_num_errors IS initialized (reset actually) when a valid
+	// block is read.
 }
 
 export int16_t nand_get_block(uint8_t *base, int in_header) {
-	nand_base += 256;
+	nand_base += 256/4;
 	uint8_t block = ((uint32_t) nand_base) >> 8;
 	uint8_t halfpage = block & 0x01;
 
+	// if in the data area, report any error that happened, to warn the
+	// user about impeding failure. done in this delayed fashion so that
+	// it also warns about errors in the header itself, which we cannot
+	// do right after correcting them because at that point we don't
+	// know whether we're reading the header or some pre-header block.
+	if (!in_header && nand_num_errors != 0)
+		UART_TX('E');
+
 	if ((block & 0x1f) == 0) {
-		UART_TX(nand_status);
-		nand_status = '_';
+		if (in_header)
+			UART_TX(' ');
+		else
+			UART_TX('.');
 		// TODO should be timed to not need flushing, else debug output slows down loading!
 		UART_FLUSH();
 	}
@@ -35,31 +44,32 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// read OOB area first. selecting it is intentionally done in such a
 	// way that it re-selects full command-and-address cycles.
 	XIO_SELECT_OOB();
-	// bad block; next one, please!
-	if (nand_base[5] != 0xff) {
-		nand_set_status('-');
+	volatile uint8_t *oob = (uint8_t *) nand_base;
+	// OOB area byte 5 programmed: bad block; next one, please!
+	if (oob[5] != 0xff)
 		return -1;
-	}
 
-	// read ECC bytes
-	uint8_t b0, b1, b2;
+	// read and decode OOB bytes. the layout in the OOB area is:
+	// L0 L1 L2 U0 BB xx U1 U2
+	uint8_t ecc0, ecc1, ecc2;
 	if (halfpage == 0) {
-		b0 = nand_base[0];
-		b1 = nand_base[1];
-		b2 = nand_base[2];
+		ecc0 = oob[0];
+		ecc1 = oob[1];
+		ecc2 = oob[2];
 	} else {
-		b0 = nand_base[3];
-		b1 = nand_base[6];
-		b2 = nand_base[7];
+		ecc0 = oob[3];
+		ecc1 = oob[6];
+		ecc2 = oob[7];
 	}
+	uint32_t ecc = (ecc0 << 14) | (ecc1 << 6) | (ecc2 >> 2);
 
+	// copy main memory data to RAM.
 	// select the correct half-page and read its first 4 bytes using full
 	// command-and-address cycles. this is really just meant to load the
-	// registers in the flash chip; the byte falls out as a byproduct.
+	// registers in the flash chip; the bytes fall out as a byproduct.
 	XIO_SELECT_BLOCK(halfpage);
-	volatile uint32_t *nand_page = ((volatile uint32_t *) nand_base);
 	uint32_t *buffer = ((uint32_t *) base);
-	buffer[0] = *nand_page;
+	buffer[0] = *nand_base;
 	// address and command are now set; no need to send them again for
 	// each byte. the flash will provide bytes sequentially until the
 	// end of the current page.
@@ -70,19 +80,32 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// because it isn't sent anyway.
 	XIO_SELECT_SEQUENTIAL();
 	for (uint32_t pos = 1; pos < 256/4; pos++)
-		buffer[pos] = *nand_page;
-
-	for (uint32_t pos = 0; pos < 256; pos++) {
-		// TODO calculate ECC
+		buffer[pos] = *nand_base;
+	
+	// try to correct any errors that might have crept into the NAND
+	// data. ECC can correct any single-bit error; in that case, a
+	// warning will be emitted before reading the next block. we cannot
+	// do that here because we don't know whether we just found the
+	// header or not.
+	//uint32_t nand_num_errors;
+	nand_num_errors = ecc_correct(base, ecc);
+	//if (nand_num_errors == 0)
+		//UART_TX('E');
+	if (nand_num_errors <= 1)
+		return 256;
+	
+	// uncorrectable error in the data area. that's a fatal error
+	// condition that we cannot recover from.
+	if (!in_header) {
+		UART_TX('U');
+		return -2;
 	}
-
-	// TODO check and correct ECC
-	// nand_set_status('.'); // no error (only outside header!)
-	// nand_set_status('!'); // error corrected
-	// nand_set_status(' '); return -1; // uncorrectable in header
-	// UART_TX('U'); return -2; // uncorrectable outside header
-
-	if (!in_header)
-		nand_set_status('.');
-	return 256;
+	
+	// if we are still waiting for the header, we want the main loop to
+	// continue calling us until we finally find a valid header, or run
+	// out of pages to read.
+	// uncorrectable errors are expected to happen a lot before the
+	// header, where the flash might use a different ECC format, so we
+	// don't warn about it there.
+	return -1;
 }
