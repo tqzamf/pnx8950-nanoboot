@@ -26,19 +26,34 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	if (!in_header && nand_num_errors != 0)
 		UART_TX('E');
 
+	// end of file! we read the entire flash and found nothing...
+	// the core will generate an appropriate error message.
+	if (nand_base > FLASH_END)
+		return -2;
+
 	if ((block & 0x1f) == 0) {
 		if (in_header)
 			UART_TX(' ');
 		else
 			UART_TX('.');
-		// TODO should be timed to not need flushing, else debug output slows down loading!
-		UART_FLUSH();
-	}
-
-	// end of file! we read 64MB of data and found nothing...
-	if (nand_base > FLASH_END) {
-		UART_TX('E');
-		return -2;
+		// timing:
+		// XIO takes ~20s to read 4096*16 pages, ie. ~3200 pages/sec.
+		// UART at 38.4kbaud can send ~4k chars/sec.
+		// thus we don't need to flush, ever. however we need some of
+		// that UART bandwidth for error reporting. theoretically, there
+		// can be up to 2 errors per page, but in reality there usually
+		// are none at all.
+		// allowing for a generous ~800 chars/sec progress reporting, we
+		// can send an error every second half-page without overwhelming
+		// the UART. this corresponds to 64k errors across the device.
+		// for comparison, the point where two errors are 99% likely to
+		// fall into the same half-page, yielding an uncorrectable error,
+		// is at 1099 errors across the device, for a safety margin of
+		// ~59x.
+		// so the progress output is limited more by terminal scroll rate
+		// than by UART speed. U-Boot takes ~256k, or 512 half-pages.
+		// printing a dot every 32 pages yields a comfortable 32 dots
+		// for loading all of U-Boot.
 	}
 
 	// read OOB area first. selecting it is intentionally done in such a
