@@ -15,7 +15,11 @@
 #define _XIO_FLASH_COMMAND (*((volatile uint16_t *) (_XIO_BASE + 0x830)))
 #define _XIO_FLASH_OPER    (*((volatile uint16_t *) (_XIO_BASE + 0x832)))
 #define FLASH_BASE ((volatile uint32_t *) 0xB0000000)
-#define FLASH_END ((volatile uint32_t *) 0xB3FFFFFF)
+// this is only half of the flash, but for some reason reading beyond
+// this point hangs the system. as the image is expected to be close to
+// the beginning of the flash, this isn't a big deal. it's just another
+// "BIOS cannot read beyond xyz" type bug...
+#define FLASH_END  ((volatile uint32_t *) 0xB1FFFFFF)
 
 /****** timeout timer using GPIO timestamp timer ******/
 /**
