@@ -37,7 +37,7 @@ static inline void call_image(void) {
 	// control serves the dual purpose of filling any hazard slots that
 	// might exist.
 	cache_flush();
-	LEDS_SET(1, 0);
+	LEDS_SET(0, 1);
 
 	// call image at 0x81000000, unsing an absolute-address jump.
 	void (*image)(void) = (void *) IMAGE_ENTRY_POINT;
@@ -103,7 +103,7 @@ void _main(void) {
 
 		// send "prompt" and turn on the green LED to signal that
 		// nanoboot is ready for Xmodem data.
-		LEDS_SET(0, 1);
+		LEDS_SET(1, 0);
 		UART_TX('\r');
 		UART_TX('\n');
 		UART_TX('X');
