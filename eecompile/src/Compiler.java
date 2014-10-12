@@ -45,7 +45,7 @@ public class Compiler {
 		final List<File> files = new ArrayList<File>();
 		File modpath = null;
 		File output = null;
-		Formatter formatter = new HexFormatter();
+		Formatter formatter = new BusPirateFormatter();
 		boolean verbose = false;
 		while (args.hasNext()) {
 			final String arg = args.next();
@@ -109,10 +109,10 @@ public class Compiler {
 				.println("  -m path    set path to modules.markdown [builtin]");
 		System.err.println("  -O level   enable optimization [0]");
 		System.err.println("     0       don't optimize");
-		System.err.println("     1       don't optimize");
+		System.err.println("     1       do optimize");
 		System.err.println("  -f format  set output format [hex]");
-		System.err.println("     hex     hex pairs, space-separated");
 		System.err.println("     bp      bus pirate commands");
+		System.err.println("     hex     hex pairs, space-separated");
 		System.err.println("     raw     raw binary");
 		System.err.println("  -v         verbose");
 		System.exit(1);
