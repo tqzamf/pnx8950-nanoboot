@@ -24,7 +24,12 @@ public class LoadInstruction extends Instruction {
 		final ArrayList<Long> values = new ArrayList<Long>();
 		while (in.available() > 0) {
 			final int word = in.readInt();
-			values.add(word & 0xffffffffl);
+			final int b0 = word >> 0 & 0xff;
+			final int b1 = word >> 8 & 0xff;
+			final int b2 = word >> 16 & 0xff;
+			final int b3 = word >> 24 & 0xff;
+			final int le = b0 << 24 | b1 << 16 | b2 << 8 | b3 << 0;
+			values.add(le & 0xffffffffl);
 		}
 		in.close();
 		return values;
