@@ -9,7 +9,7 @@ LDFLAGS=-static -G0
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin uImage eecompile.jar
+TARGETS=boot.bin uImage eecompile.jar nanoboot.bp
 
 all: $(TARGETS)
 
@@ -19,6 +19,7 @@ clean:
 eecompile.jar: eecompile/src/*.java eecompile/build.xml
 	(cd eecompile && ant clean build)
 	cp eecompile/eecompile.jar $@
+	chmod +x $@
 
 ecctester: ecctester.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -mabicalls -mabi=32 -o $@ $^
@@ -27,6 +28,9 @@ uImage: boot.bin
 	$(MKIMAGE) -e $$($(NM) boot.elf | awk -f get-entry-point.awk) \
 		-A mips -O linux -T kernel -C none -n 'NanoBoot' -a 0xA4010000 \
 		-d boot.bin $@
+
+%.bp: %.ee boot.bin eecompile.jar
+	./eecompile.jar -O1 -fbp -o $@ -v $<
 
 %.bin: %.elf
 	$(OC) -j .text -O binary $< $@
