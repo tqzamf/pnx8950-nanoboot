@@ -52,10 +52,15 @@ export int16_t xmodem_get_block(uint8_t *base, int in_header) {
 				// there is no possibility to retry if that ACK is lost:
 				// if all goes well, the received image will be running
 				// by the time any retried EOTs arrive!
-				// here we have to flush, in case the image reconfigures
-				// the UART.
+				// we don't flush the UART. if the image immediately
+				// reconfigures it to something incompatible, the ACK
+				// will get lost and the Xmodem client will keep retrying
+				// for a while. however there is some disruption to be
+				// expected in that case anyway, because the client needs
+				// to switch his UART config as well. flushing needs a
+				// considerable amount of space, so there is no point
+				// adding it just for an obscure boundary case.
 				UART_TX(ACK);
-				UART_FLUSH();
 				return 0;
 			}
 			if (ch != SOH)
