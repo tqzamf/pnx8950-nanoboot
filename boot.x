@@ -13,4 +13,7 @@ SECTIONS
    . = ALIGN(4);
    _edata = .;
  }
+ .uninitialized : {
+   KEEP(*(.uninitialized));
+ }
 }

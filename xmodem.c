@@ -10,8 +10,9 @@
 #define SOH 0x01
 #define CRC 'C'
 
-static uint8_t xmodem_ack, xmodem_block;
-static uint32_t xmodem_timeout;
+static uint8_t xmodem_ack uninitialized;
+static uint8_t xmodem_block uninitialized;
+static uint32_t xmodem_timeout uninitialized;
 
 export void xmodem_init(void) {
 	xmodem_ack = NAK;

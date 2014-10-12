@@ -2,15 +2,14 @@
 #include "hw.h"
 #include "ecc.c"
 
-static volatile uint32_t *nand_base;
-static uint32_t nand_num_errors;
+static volatile uint32_t *nand_base uninitialized;
+static uint32_t nand_num_errors uninitialized;
 
 export void nand_init(void) {
 	nand_base = (void *) (FLASH_BASE - 256);
-	// no need to initialize nand_num_errors here. it's ignored while in
-	// the header, and it takes a valid block to get out of the header.
-	// nand_num_errors IS initialized (reset actually) when a valid
-	// block is read.
+	// no need to initialize nand_num_errors. it's ignored while in the
+	// header, and it takes a valid block to get out of the header. it
+	// IS set when a valid block is read.
 }
 
 export int16_t nand_get_block(uint8_t *base, int in_header) {

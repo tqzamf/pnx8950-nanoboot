@@ -18,7 +18,7 @@ struct __attribute__((packed)) image_header {
 	uint32_t unknown;
 };
 
-static uint8_t xmodem_enabled;
+static uint8_t xmodem_enabled uninitialized;
 
 static inline uint32_t get_block(uint8_t *base, int in_header) {
 	if (xmodem_enabled)
@@ -96,12 +96,13 @@ static inline void load_and_call_image(void) {
 
 void _main(void) __attribute__((noreturn, section(".init")));
 void _main(void) {
+	xmodem_enabled = 0;
 	nand_init();
 
 	for (;;) {
 		load_and_call_image();
 
-		// send "prompt" and turn on the green LED to signal that
+		// send "prompt" and turn on the red LED to signal that
 		// nanoboot is ready for Xmodem data.
 		LEDS_SET(1, 0);
 		UART_TX('\r');
