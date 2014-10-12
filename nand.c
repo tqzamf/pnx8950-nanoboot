@@ -3,27 +3,15 @@
 #include "ecc.c"
 
 static volatile uint32_t *nand_base uninitialized;
-static uint32_t nand_num_errors uninitialized;
 
 export void nand_init(void) {
 	nand_base = (void *) (FLASH_BASE - 256);
-	// no need to initialize nand_num_errors. it's ignored while in the
-	// header, and it takes a valid block to get out of the header. it
-	// IS set when a valid block is read.
 }
 
 export int16_t nand_get_block(uint8_t *base, int in_header) {
 	nand_base += 256/4;
 	uint8_t block = ((uint32_t) nand_base) >> 8;
 	uint8_t halfpage = block & 0x01;
-
-	// if in the data area, report any error that happened, to warn the
-	// user about impeding failure. done in this delayed fashion so that
-	// it also warns about errors in the header itself, which we cannot
-	// do right after correcting them because at that point we don't
-	// know whether we're reading the header or some pre-header block.
-	if (!in_header && nand_num_errors != 0)
-		UART_TX('E');
 
 	// end of file! we read the entire flash and found nothing...
 	// the core will generate an appropriate error message.
@@ -99,14 +87,14 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	
 	// try to correct any errors that might have crept into the NAND
 	// data. ECC can correct any single-bit error; in that case, a
-	// warning will be emitted before reading the next block. we cannot
-	// do that here because we don't know whether we just found the
-	// header or not.
-	//uint32_t nand_num_errors;
-	nand_num_errors = ecc_correct(base, ecc);
-	//if (nand_num_errors == 0)
-		//UART_TX('E');
-	if (nand_num_errors <= 1)
+	// warning will be emitted before reading the next block. we warn
+	// even before the header, under the assumption that a different
+	// ECC format should cause uncorrectable errors, so if the error
+	// was correctable, the ECC format was probably right.
+	uint32_t num_errors = ecc_correct(base, ecc);
+	if (num_errors == 0)
+		UART_TX('E');
+	if (num_errors <= 1)
 		return 256;
 	
 	// uncorrectable error in the data area. that's a fatal error
