@@ -78,6 +78,8 @@ public class Compiler {
 					formatter = new BinaryFormatter();
 				else if (format.equalsIgnoreCase("hex"))
 					formatter = new HexFormatter();
+				else if (format.equalsIgnoreCase("bp"))
+					formatter = new BusPirateFormatter();
 				else
 					usage();
 			} else if (arg.startsWith("-"))
@@ -110,6 +112,7 @@ public class Compiler {
 		System.err.println("     1       don't optimize");
 		System.err.println("  -f format  set output format [hex]");
 		System.err.println("     hex     hex pairs, space-separated");
+		System.err.println("     bp      bus pirate commands");
 		System.err.println("     raw     raw binary");
 		System.err.println("  -v         verbose");
 		System.exit(1);
