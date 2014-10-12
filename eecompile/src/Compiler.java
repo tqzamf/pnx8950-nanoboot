@@ -54,7 +54,7 @@ public class Compiler {
 			else if (arg.equals("-m"))
 				modpath = new File(args.next());
 			else if (arg.startsWith("-O")) {
-				int level;
+				final int level;
 				if (arg.equals("-O"))
 					level = Integer.parseInt(args.next());
 				else
@@ -70,8 +70,12 @@ public class Compiler {
 				if (output != null)
 					usage();
 				output = new File(args.next());
-			} else if (arg.equals("-f")) {
-				final String format = args.next();
+			} else if (arg.startsWith("-f")) {
+				final String format;
+				if (arg.equals("-f"))
+					format = args.next();
+				else
+					format = arg.substring(2);
 				if (format.equalsIgnoreCase("bin")
 						|| format.equalsIgnoreCase("binary")
 						|| format.equalsIgnoreCase("raw"))
@@ -104,7 +108,7 @@ public class Compiler {
 
 	private static void usage() {
 		System.err
-				.println("usage: eecompile [options] -o output.hex input.ee...");
+				.println("usage: eecompile [options] -o output.bp input.ee...");
 		System.err
 				.println("  -m path    set path to modules.markdown [builtin]");
 		System.err.println("  -O level   enable optimization [0]");
