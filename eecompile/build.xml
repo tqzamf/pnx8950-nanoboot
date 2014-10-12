@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="eecompile">
+	<property name="debuglevel" value="source,lines,vars"/>
+	<property name="target" value="1.6"/>
+	<property name="source" value="1.6"/>
+
+	<target name="clean">
+		<delete dir="temp"/>
+		<delete file="eecompile.jar"/>
+	</target>
+
+	<target name="build">
+		<mkdir dir="temp"/>
+		<copy includeemptydirs="false" todir="temp">
+			<fileset dir="src">
+				<exclude name="**/*.java"/>
+			</fileset>
+		</copy>
+		<javac debug="true" debuglevel="${debuglevel}" includeantruntime="false"
+				destdir="temp" source="${source}" target="${target}">
+			<src path="src"/>
+		</javac>
+		<jar destfile="eecompile.jar" filesonly="true" level="9">
+			<fileset dir="temp" />
+			<manifest>
+				<attribute name="Main-Class" value="Compiler" />
+			</manifest>
+		</jar>
+		<delete dir="temp"/>
+	</target>
+</project>

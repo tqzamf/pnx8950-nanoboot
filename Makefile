@@ -9,12 +9,16 @@ LDFLAGS=-static -G0
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin uImage
+TARGETS=boot.bin uImage eecompile.jar
 
 all: $(TARGETS)
 
 clean:
 	rm -f *.o *~ $(TARGETS)
+
+eecompile.jar: eecompile/src/*.java eecompile/build.xml
+	(cd eecompile && ant clean build)
+	cp eecompile/eecompile.jar $@
 
 ecctester: ecctester.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -mabicalls -mabi=32 -o $@ $^
