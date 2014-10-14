@@ -24,10 +24,10 @@ void _init(void) {
 	
 	// setup CMEM registers. these are the values that Linux uses, except
 	// for PCI which we don't use.
-	MTC0_CMEM(0, CMEM_MMIO_BASE, CMEM_MMIO_SIZE, 1);
-	MTC0_CMEM(1, CMEM_XIO_BASE, CMEM_XIO_SIZE, 1);
-	MTC0_CMEM(2, 0, 0, 0);
-	MTC0_CMEM(3, 0, 0, 0);
+	MTC0_CMEM(0, CMEM_MMIO_BASE, CMEM_MMIO_SIZE);
+	MTC0_CMEM(1, CMEM_XIO_BASE, CMEM_XIO_SIZE);
+	MTC0_CMEM(2, 0, CMEM_DISABLED);
+	MTC0_CMEM(3, 0, CMEM_DISABLED);
 
 	// disable TLB and static mapping, and stop the timers. 
 	// also fills any hazard slots for cache disable.
