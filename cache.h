@@ -87,22 +87,13 @@ static inline void cache_disable(void) {
 }
 
 static inline void cache_init(void) {
-	// initialize cache (instruction and data). do it in a single loop
-	// if possible to spave some space.
-#if (ICACHE_ENTRIES == DCACHE_ENTRIES) && (ICACHE_LINE == DCACHE_LINE)
-	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
-			index += ICACHE_LINE) {
-		ICACHE_INDEX_STORE_TAG(index);
-		DCACHE_INDEX_STORE_TAG(index);
-	}
-#else
+	// initialize data cache.
+	// instruction cache doesn't need this. there is nothing to write
+	// back, so it's fine if the cache entries are uninitialized before
+	// invalidating.
 	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
 			index += ICACHE_LINE)
-		ICACHE_INDEX_STORE_TAG(index);
-	for (uint32_t index = 0; index < DCACHE_LINE * DCACHE_ENTRIES - 1;
-			index += DCACHE_LINE)
 		DCACHE_INDEX_STORE_TAG(index);
-#endif
 }
 
 static inline void cache_flush(void) {
