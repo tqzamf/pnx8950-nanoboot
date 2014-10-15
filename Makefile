@@ -6,6 +6,7 @@ AS=mipsel-linux-gnu-as
 ASFLAGS=--fatal-warnings -mips32 -mabi=eabi -mgp32 -mno-shared -G0
 LD=mipsel-linux-gnu-ld
 LDFLAGS=-static -G0
+CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
@@ -38,11 +39,12 @@ uImage: boot.bin
 boot.elf: start.o init.o main.o
 	$(LD) $(LDFLAGS) -o $@ -T boot.x -nostdlib $^
 
-test.elf: test.o
-	$(LD) $(LDFLAGS) -o $@ -T test.x -nostdlib $^
+%.elf: %.o appstart.o
+	$(LD) $(LDFLAGS) -o $@ -T app.x -nostdlib $^
 
 %.o: %.S
-	$(AS) $(ASFLAGS) -o $@ $^
+	$(CPP) -o $*.s $^
+	$(AS) $(ASFLAGS) -o $@ $*.s
 
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $^
