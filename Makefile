@@ -10,7 +10,7 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin uImage eecompile.jar nanoboot.bp
+TARGETS=boot.bin uImage eecompile.jar nanoboot.bp ramcheck.bin
 
 all: $(TARGETS)
 
