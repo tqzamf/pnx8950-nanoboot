@@ -7,8 +7,8 @@
 #include "xmodem.c"
 #include "nand.c"
 
-#define IMAGE_LOAD_ADDR     (DRAM_BASE | 0x01000000)
-#define IMAGE_ENTRY_POINT   (DRAM_BASE | 0x01000000)
+#define IMAGE_LOAD_ADDR     (DRAM_BASE | 0x00100000)
+#define IMAGE_ENTRY_POINT   (DRAM_BASE | 0x00100000)
 #define IMAGE_HEADER_SIZE 0x200
 #define IMAGE_HEADER_SIGNATURE 0x57434530
 struct __attribute__((packed)) image_header {

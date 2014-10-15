@@ -59,7 +59,7 @@ int main(void) {
 	for (uint32_t addr = 0x80000000; addr < 0x90000000; addr += 0x100000) {
 		putx(addr);
 		puts(":");
-		if (addr == 0x84000000 || addr == 0x81000000) {
+		if (addr == 0x84000000 || addr == 0x80100000) {
 			// that's us; don't shoot ourselves!
 			puts(" skipped\r\n");
 			continue;
