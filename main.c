@@ -106,6 +106,8 @@ void _main(void) __attribute__((noreturn, section(".init")));
 void _main(void) {
 	xmodem_enabled = 0;
 	nand_init();
+	UART_TX('\r');
+	UART_TX('\n');
 
 	for (;;) {
 		load_and_call_image();
