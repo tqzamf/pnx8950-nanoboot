@@ -1,1 +1,10 @@
 eecompile/bin
+eecompile/eecompile.jar
+eecompile.jar
+*.bin
+*.elf
+*.bp
+*.s
+*.o
+uImage
+ecctester

@@ -10,12 +10,12 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin uImage eecompile.jar nanoboot.bp ramcheck.bin
+TARGETS=boot.bin uImage eecompile.jar nanoboot.bp ramcheck.bin ecctester
 
 all: $(TARGETS)
 
 clean:
-	rm -f *.o *~ $(TARGETS)
+	rm -f *.o *.elf *.bp *.s *~ $(TARGETS)
 
 eecompile.jar: eecompile/src/*.java eecompile/build.xml
 	(cd eecompile && ant clean build)
