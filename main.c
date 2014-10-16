@@ -72,7 +72,7 @@ static inline void load_and_call_image(void) {
 			// if this happens while waiting for the header, the normal
 			// fallback will start receiving an image over xmodem,
 			// thereby retrying xmodem but not flash reads.
-			return;
+			break;
 		if (res < 0)
 			// invalid block. try again.
 			continue;
@@ -88,8 +88,16 @@ static inline void load_and_call_image(void) {
 		}
 	}
 
+	// add a linebreak to separate nanoboot progress output from the next
+	// stage. flush output before, because the UART drops new bytes if
+	// its buffer is full.
+	UART_FLUSH();
+	UART_TX('\r');
+	UART_TX('\n');
 	// if the image is complete, try calling it. don't call an incomplete
-	// image; try to receive a new one instead.
+	// image; try to receive a new one instead. however, do try to call
+	// a complete image even on fatal errors. in that case, the error
+	// happened after the end of the image, and so is harmless.
 	if (((uint32_t) base) >= ((uint32_t) data_end))
 		call_image();
 }
