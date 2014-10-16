@@ -135,23 +135,23 @@ static void UART_FLUSH(uint8_t ch) {
 	} while (0)
 
 /**
- * selects main memory read of the given half-page. leaves the XIO
- * interface in whatever state it is.
+ * selects main memory read of the given half-page, and configures the
+ * XIO interface to perform full reads with 1 command and 4 address
+ * cycles.
  *
  * @param x address bit A8 (0x100)
  */
 #define XIO_SELECT_BLOCK(x) \
 	do { \
-		/*_XIO_FLASH_CONTROL = 0x00370000 + ((x) & 1);*/ \
-		_XIO_FLASH_COMMAND = (x) & 1; \
+		_XIO_FLASH_CONTROL = 0x00370000 + ((x) & 1); \
 	} while (0)
 
 /**
- * reconfigures the XIO interface to perform short reads without any
- * command or address cycles. the flash will respond with sequential
+ * reconfigures the XIO interface to perform short read cycles without
+ * any command or address cycles. the flash will respond with sequential
  * bytes until the end of the current page.
  */
  #define XIO_SELECT_SEQUENTIAL() \
 	do { \
-		_XIO_FLASH_OPER = 0x0030; \
+		_XIO_FLASH_CONTROL = 0x00300000; \
 	} while (0)

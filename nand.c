@@ -44,47 +44,49 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 		// the FlashReader preceding it.
 	}
 
-	// read OOB area first. selecting it is intentionally done in such a
-	// way that it re-selects full command-and-address cycles.
-	XIO_SELECT_OOB();
-	volatile uint8_t *oob = (uint8_t *) nand_base;
-	// OOB area byte 5 programmed: bad block; next one, please!
-	if (oob[5] != 0xff)
-		return -1;
+	if (halfpage == 0) {
+		// copy flash data to RAM, ie. copy the full 512-byte page and
+		// all OOB bytes used for ECC. this is essentially a 520-byte DMA
+		// operation.
+		// select the first half-page and read its first 4 bytes using a
+		// full command-and-address cycle. this is really just meant to
+		// load the registers in the flash chip; the bytes fall out as a
+		// byproduct.
+		XIO_SELECT_BLOCK(0);
+		uint32_t *buffer = ((uint32_t *) base);
+		buffer[0] = *nand_base;
+		// address and command are now set; no need to send them again
+		// for each byte. the flash will provide bytes sequentially until
+		// the end of the current page.
+		// not sending the address makes reads much faster because it
+		// saves ~80% of the bus-level read/write accesses to the flash,
+		// and probably also avoids repeating the page read operation by
+		// the flash itself. it also means that we don't have to
+		// increment the nand address because it isn't sent anyway.
+		XIO_SELECT_SEQUENTIAL();
+		for (uint32_t pos = 1; pos < 512/4 + 8/4; pos++)
+			buffer[pos] = *nand_base;
+	}
 
 	// read and decode OOB bytes. the layout in the OOB area is:
 	// L0 L1 L2 U0 BB xx U1 U2
-	uint8_t ecc0, ecc1, ecc2;
+	uint8_t bbm, ecc0, ecc1, ecc2;
 	if (halfpage == 0) {
-		ecc0 = oob[0];
-		ecc1 = oob[1];
-		ecc2 = oob[2];
+		ecc0 = base[512 + 0];
+		ecc1 = base[512 + 1];
+		ecc2 = base[512 + 2];
+		bbm = base[512 + 5];
 	} else {
-		ecc0 = oob[3];
-		ecc1 = oob[6];
-		ecc2 = oob[7];
+		ecc0 = base[256 + 3];
+		ecc1 = base[256 + 6];
+		ecc2 = base[256 + 7];
+		bbm = base[256 + 5];
 	}
+	if (bbm != 0xff)
+		// OOB area byte 5 programmed: bad block; next one, please!
+		return -1;
 	uint32_t ecc = (ecc0 << 14) | (ecc1 << 6) | (ecc2 >> 2);
 
-	// copy main memory data to RAM.
-	// select the correct half-page and read its first 4 bytes using full
-	// command-and-address cycles. this is really just meant to load the
-	// registers in the flash chip; the bytes fall out as a byproduct.
-	XIO_SELECT_BLOCK(halfpage);
-	uint32_t *buffer = ((uint32_t *) base);
-	buffer[0] = *nand_base;
-	// address and command are now set; no need to send them again for
-	// each byte. the flash will provide bytes sequentially until the
-	// end of the current page.
-	// not sending the address makes reads much faster because it saves
-	// ~80% of the read/write accesses to the flash, and probably also
-	// avoids repeating the page read operation by the flash itself.
-	// it also means that we don't have to increment the nand address
-	// because it isn't sent anyway.
-	XIO_SELECT_SEQUENTIAL();
-	for (uint32_t pos = 1; pos < 256/4; pos++)
-		buffer[pos] = *nand_base;
-	
 	// try to correct any errors that might have crept into the NAND
 	// data. ECC can correct any single-bit error; in that case, a
 	// warning will be emitted before reading the next block. we warn
@@ -92,7 +94,7 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// ECC format should cause uncorrectable errors, so if the error
 	// was correctable, the ECC format was probably right.
 	uint32_t num_errors = ecc_correct(base, ecc);
-	if (num_errors == 0)
+	if (num_errors == 1)
 		UART_TX('E');
 	if (num_errors <= 1)
 		return 256;
