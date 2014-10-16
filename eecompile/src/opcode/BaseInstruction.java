@@ -1,3 +1,5 @@
+package opcode;
+
 public abstract class BaseInstruction extends Instruction {
 	public abstract boolean canCombineWith(final BaseInstruction ins);
 

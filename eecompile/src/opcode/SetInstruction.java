@@ -1,5 +1,10 @@
+package opcode;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import core.Module;
+
 
 public class SetInstruction extends Instruction {
 	private final Module module;

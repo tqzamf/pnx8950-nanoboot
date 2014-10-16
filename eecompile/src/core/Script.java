@@ -1,6 +1,11 @@
+package core;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import opcode.BaseInstruction;
+import opcode.HaltInstruction;
+import opcode.Instruction;
 
 public class Script {
 	private final List<BaseInstruction> instructions = new ArrayList<BaseInstruction>();

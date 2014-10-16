@@ -1,3 +1,4 @@
+package core;
 public class Module {
 	private static final int MMIO_BASE = 0x1be00000;
 

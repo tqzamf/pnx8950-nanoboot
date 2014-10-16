@@ -1,5 +1,10 @@
+package opcode;
+
 import java.util.Arrays;
 import java.util.List;
+
+import core.Module;
+
 
 public class StoreInstruction extends BaseInstruction {
 	private final Module module;

@@ -17,7 +17,7 @@ all: $(TARGETS)
 clean:
 	rm -f *.o *.elf *.bp *.s *~ $(TARGETS)
 
-eecompile.jar: eecompile/src/*.java eecompile/build.xml
+eecompile.jar: eecompile/src/*.java eecompile/src/*/*.java eecompile/build.xml
 	(cd eecompile && ant clean build)
 	cp eecompile/eecompile.jar $@
 	chmod +x $@

@@ -6,6 +6,16 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import core.ModuleParser;
+import core.Script;
+import core.ScriptParser;
+
+
+import output.BinaryFormatter;
+import output.BusPirateFormatter;
+import output.Formatter;
+import output.HexFormatter;
+
 public class Compiler {
 	private final boolean optimize;
 	private final ModuleParser modules;
