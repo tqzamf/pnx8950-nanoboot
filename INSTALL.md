@@ -17,12 +17,11 @@ if the bus pirate shows errors during reprogramming, then probably the boot modu
 
 * connect to nanoboot: `screen /dev/ttyUSBx 38400`.
 * switch SW1.1 to ON and press reset. nanoboot should eventually respond with an `X` prompt.
-* upload U-Boot: press Ctrl-A `:` then type `exec !! sx uboot.bin`. you'll want to use the one with Linux ECC and proper length in the header.
+* upload U-Boot: press Ctrl-A `:` then type `exec !! sx u-boot.ecw`. you'll want to use the one with Linux ECC and proper length in the header.
 * cancel autoboot. if you miss it and it fails to boot, that's fine but don't do a `saveenv` without resetting again.
 * do `mtdparts default` if necessary. it *is* necessary when converting from Windows CE.
-* edit `mtdparts` to make the `U-Boot` partition writeable, ie. change `512k(U-Boot)ro` to `512k(U-Boot)`: `editenv mtdparts`.
 * erase the `U-Boot` partition: `nand erase.part U-Boot`.
-* load the U-Boot image from somewhere. easiest but slowest solution is Xmodem, ie. `loady` and then Ctrl-A `:` `exec !! sx uboot.bin` again.
+* load the U-Boot image from somewhere. easiest but slowest solution is Xmodem, ie. `loady` and then Ctrl-A `:` `exec !! sx u-boot.ecw` again.
 * write the image to flash: `nand write $(loadaddr) U-Boot 0x00040000`. the size (last value) may need adjusting.
 * switch SW1.1 to OFF and press reset.
 
