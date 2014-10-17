@@ -20,9 +20,9 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 
 	if ((block & 0x3f) == 0) {
 		if (in_header)
-			UART_TX(' ');
-		else
 			UART_TX('.');
+		else
+			UART_TX('#');
 		// timing:
 		// XIO takes ~20s to read 4096*16 pages, ie. ~3200 pages/sec.
 		// UART at 38.4kbaud can send ~4k chars/sec.
