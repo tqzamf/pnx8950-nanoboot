@@ -1,10 +1,12 @@
 eecompile/bin
 eecompile/eecompile.jar
 eecompile.jar
-*.bin
-*.elf
+*.ecw
+*.uImage
+*.aelf
 *.bp
 *.s
 *.o
-uImage
+boot.elf
+boot.bin
 ecctester

@@ -10,12 +10,14 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin uImage eecompile.jar nanoboot.bp ramcheck.bin ecctester
+TARGETS=boot.bin eecompile.jar nanoboot.bp ramcheck.ecw ecctester
 
 all: $(TARGETS)
 
 clean:
 	rm -f *.o *.elf *.bp *.s *~ $(TARGETS)
+
+# tools
 
 eecompile.jar: eecompile/src/*.java eecompile/src/*/*.java eecompile/build.xml
 	(cd eecompile && ant clean build)
@@ -25,22 +27,37 @@ eecompile.jar: eecompile/src/*.java eecompile/src/*/*.java eecompile/build.xml
 ecctester: ecctester.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -mabicalls -mabi=32 -o $@ $^
 
-uImage: boot.bin
-	$(MKIMAGE) -e $$($(NM) boot.elf | awk -f get-entry-point.awk) \
-		-A mips -O linux -T kernel -C none -n 'NanoBoot' -a 0xA4010000 \
-		-d boot.bin $@
-
-%.bp: %.ee boot.bin eecompile.jar
-	./eecompile.jar -O1 -fbp -o $@ -v $<
-
-%.bin: %.elf
-	$(OC) -j .text -O binary $< $@
+# nanoboot
 
 boot.elf: start.o init.o main.o
 	$(LD) $(LDFLAGS) -o $@ -T boot.x -nostdlib $^
 
-%.elf: %.o appstart.o
+boot.bin: boot.elf
+	$(OC) -j .text -O binary $< $@
+
+boot.uImage: boot.bin
+	$(MKIMAGE) -e $$($(NM) boot.elf | awk -f get-entry-point.awk) \
+		-A mips -O linux -T kernel -C none -n 'NanoBoot' -a 0xA4010000 \
+		-d boot.bin $@
+
+# boot scripts
+
+%.bp: %.ee boot.bin eecompile.jar
+	./eecompile.jar -O1 -fbp -o $@ -v $*.ee
+
+# apps
+
+%.aelf: %.o appstart.o
 	$(LD) $(LDFLAGS) -o $@ -T app.x -nostdlib $^
+
+%.ecw: %.aelf
+	$(OC) -j .text -O binary $< $@
+
+%.uImage: %.ecw
+	$(MKIMAGE) -A mips -O linux -T kernel -C none -n "$*" \
+		-a 0xA00FFE00 -e 0xA0100000 -d $*.ecw $@
+
+# ...and rules for C and assembly files
 
 %.o: %.S
 	$(CPP) -o $*.s $^
