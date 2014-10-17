@@ -59,7 +59,10 @@ int main(void) {
 	for (uint32_t addr = 0x80000000; addr < 0x90000000; addr += 0x100000) {
 		putx(addr);
 		puts(":");
-		if (addr == 0x84000000 || addr == 0x80100000) {
+		if (addr == 0x84000000 /* nanoboot */
+				|| addr == 0x80100000 /* ramcheck itself */
+				|| addr == 0x87e00000 /* U-Boot's PCI DMA area */
+			) {
 			// that's us; don't shoot ourselves!
 			puts(" skipped\r\n");
 			continue;
@@ -114,5 +117,7 @@ int main(void) {
 		puts("WARNING: errors detected! check log for details\r\n");
 	else
 		puts("all memory OK\r\n");
+	// return to nanoboot. for U-Boot, this crashes the system, because
+	// U-Boot has been overwritten by ramcheck.
 	return 0;
 }
