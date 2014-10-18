@@ -8,7 +8,7 @@ gpio.01c = 1100eeff
 # set clock frequencies
 clock.000 = 2c410700 # MIPS
 clock.014 = 24590600 # DRAM
-# reset all clocks (TBD why? seems to work without it..)
+# reset all clocks
 clock.044 = 000003ff then 00000200
 # enable clocks
 clock.100 = 00000003 # MIPS

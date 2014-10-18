@@ -1,50 +1,58 @@
+# set all GPIOs to input
 gpio.010 = 0000ffff
 gpio.014 = 0000ffff
 gpio.018 = 0000ffff
 gpio.01c = 0000ffff
-clock.000 = 2c410700
+# set clock frequencies
+clock.000 = 2c410700 # MIPS
 clock.004 = 00b40904
 clock.008 = 3828050c
 clock.00c = 3828050c
-clock.014 = 24590600
+clock.014 = 24590600 # DRAM
 clock.048 = 00b40904
+# reset all clocks
 clock.044 = 000003ff then 00000200
-clock.100 = 00000003
+# enable clocks
+clock.100 = 00000003 # MIPS
 clock.200 = 00000003
-clock.204 = 00000103
+clock.204 = 00000103 # TM32
 clock.208 = 00000103
-clock.20c = 00000002
+clock.20c = 00000002 # DSCN
 clock.210 = 00000002
-clock.214 = 00000004
+clock.214 = 00000004 # unknown but required for MIPS
 clock.218 = 00000004
-clock.a00 = 00000003
+clock.a00 = 00000003 # QVCPs
 clock.a04 = 0000000b
 clock.a08 = 00000003
 clock.a0c = 0000000b
-clock.800 = 00000023
+clock.800 = 00000023 # MSPs
 clock.804 = 00000023
-clock.500 = 00000073
+clock.500 = 00000073 # MBSes
 clock.504 = 00000073
-clock.708 = 00000003
-clock.714 = 00000003
+clock.708 = 00000003 # unknown
+clock.714 = 00000003 # I²C
 clock.718 = 00000003
-clock.71c = 00000003
+clock.71c = 00000003 # UARTs
 clock.720 = 00000003
-pci-xio.050 = 20000000
-pci-xio.054 = 1be00000
-pci-xio.058 = 10000000
-pci-xio.010 = 01da0f83
-pci-xio.014 = 00000245
-pci-xio.044 = 00000006
-pci-xio.814 = 00494817
-pci-xio.830 = 00370000
-pci-xio.06c = 00591131
+pci-xio.050 = 20000000 # DRAM base
+pci-xio.054 = 1be00000 # MMIO base
+pci-xio.058 = 10000000 # XIO base
+pci-xio.010 = 01da0f83 # PCI setup
+pci-xio.014 = 00000245 # PCI control
+pci-xio.044 = 00000006 # PCI config command (?)
+# setup XIO interface
+pci-xio.814 = 00494817 # flash aperture
+pci-xio.830 = 00370000 # flash command
+pci-xio.06c = 00591131 # PCI vendor & device ID
+# misc
 global2.60c = 00000001
-global2.050 = 00000001
+global2.050 = 00000001 # PCI INTA enable
+# enable DSCN to PMAN bridge
 global2.208 = 00000001
 global2.204 = 08000000
-dram.004 = 00000003
-dram.010 = 00000000
+# DRAM config
+dram.004 = 00000003 # control
+dram.010 = 00000000 # rank config
 dram.014 = 07ffffff
 dram.018 = 0fffffff
 dram.048 = 00000003
@@ -53,9 +61,9 @@ dram.0c4 = 0000000a
 dram.0d0 = 0000000d
 dram.0d4 = 0000000a
 dram.088 = 0000000a
-dram.080 = 00000033
+dram.080 = 00000033 # extended mode contol
 dram.084 = 00000000
-dram.100 = 00030003
+dram.100 = 00030003 # timing
 dram.104 = 0000000b
 dram.108 = 00000002
 dram.10c = 00000003
@@ -66,19 +74,25 @@ dram.120 = 0000000e
 dram.124 = 00000002
 dram.128 = 00000008
 dram.12c = 00000618
+# reset / start DRAM controller
 dram.000 = 00002000 then 00000001
+# use XIO DMA to copy FlashReader into memory
 pci-xio.800 = 10000000
 pci-xio.804 = 04010000
 pci-xio.808 = 00001000
 pci-xio.80c = 1be00296
 sleep 628000 # 23259.26us
+# switch red & green CPU LEDs on
 gpio.00c = 02020000
 gpio.01c = 11000000
+# data about the boot script
 global1.500 = 00130001
 global1.508 = 00010014
 global1.504 = 00000006
+# set MIPS entry point and release reset
 global2.010 = 04010001
 reset.000 = 0000000a
+# manufacturer ID + hardware ID + board UUID
 global2.500 = ffffffff
 global2.504 = ffffffff
 global2.508 = ffffffff
