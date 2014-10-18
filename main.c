@@ -8,14 +8,13 @@
 #include "nand.c"
 
 #define IMAGE_LOAD_ADDR     (DRAM_BASE | 0x00100000)
-#define IMAGE_ENTRY_POINT   (DRAM_BASE | 0x00100000)
 #define IMAGE_HEADER_SIZE 0x200
 #define IMAGE_HEADER_SIGNATURE 0x57434530
 struct __attribute__((packed)) image_header {
 	uint32_t signature1;
 	uint32_t length;
 	uint32_t signature2;
-	uint32_t unknown;
+	uint32_t entrypoint;
 };
 
 static uint8_t xmodem_enabled uninitialized;
@@ -32,16 +31,15 @@ static inline uint32_t get_block(uint8_t *base, int in_header) {
 		return -2;
 }
 
-static inline void call_image(void) {
+static inline void call_image(uint32_t addr) {
 	// flush cache and run image cached, for ideal performance. the LED
 	// control serves the dual purpose of filling any hazard slots that
 	// might exist.
 	cache_flush();
 	LEDS_SET(0, 1);
 
-	// call image at 0x81000000, unsing an absolute-address jump.
-	void (*image)(void) = (void *) IMAGE_ENTRY_POINT;
-	asm volatile("" : "=r" (image) : "r" (image));
+	// call image at its entry point, using an absolute-address jump.
+	void (*image)(void) = (void *) (addr | DRAM_BASE);
 	image();
 
 	// we only ever get here when the image returns, which it doesn't
@@ -99,7 +97,7 @@ static inline void load_and_call_image(void) {
 	// a complete image even on fatal errors. in that case, the error
 	// happened after the end of the image, and so is harmless.
 	if (((uint32_t) base) >= ((uint32_t) data_end))
-		call_image();
+		call_image(header->entrypoint);
 }
 
 void _main(void) __attribute__((noreturn, section(".init")));

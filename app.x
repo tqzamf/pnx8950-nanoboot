@@ -7,7 +7,7 @@ SECTIONS
    LONG(0x57434530)
    LONG(__image_end - 0x80100000)
    LONG(0x57434530)
-   LONG(0)
+   LONG(_start - 0x80000000)
    . = ALIGN(512);
    KEEP(*(.start))
    KEEP(*(.text*))
