@@ -10,3 +10,5 @@ eecompile.jar
 boot.elf
 boot.bin
 ecctester
+bootce/wince?.bin
+bootce/wince?.gz
