@@ -1,7 +1,7 @@
 # set all GPIOs to input, except for the CPU LEDs. pull these low to
-# enable them.
+# enable them. also pull GPIO12 low to allow Linux-initiated reboots.
 gpio.00c = 02020000
-gpio.010 = 0000ffff
+gpio.010 = 1000efff
 gpio.014 = 0000ffff
 gpio.018 = 0000ffff
 gpio.01c = 1100eeff
