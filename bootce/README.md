@@ -32,3 +32,15 @@ There was no DSP image found in the CE image or on flash!
 Please update either the flash or include the DSP image into the CE image
 !!!!!!!!!!!!!!!!!!!!!!!!!!
 ```
+
+## Limitations
+
+* it isn't autonomous. it needs U-Boot to load it into memory.
+
+* with `loadaddr=0x82000000`, it is probably limited to ~31MB uncompressed image size.
+
+  workaround: `setenv loadaddr 0x85000000`, for ~120MB uncompressed, 72MB compressed max.
+
+* it cannot load the FlashReader. but then again, why should it, when it can boot WinCE directly.
+
+* it cannot provide the DSP images. either build them into the WinCE image (`\Windows\phStbRootApp.mi`, probably), or have them in flash (uncompressed, and with WinCE ECC format) with a valid info page.

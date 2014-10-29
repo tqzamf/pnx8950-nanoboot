@@ -1,22 +1,22 @@
 ## Installing nanoboot on the Pollinux board
 
 * build nanoboot (obviously). this is just `make clean all`.
-* solder pin headers onto U11.
-* connect bus pirate. pin 4 is GND, 5 is SDA, 6 is SCL.
+* solder pin headers onto U11. pins 5 .. 8 should be enough; GND is almost impossible to solder.
+* connect bus pirate. pin 4 is GND, 5 is SDA, 6 is SCL. there's an alternative GND next to the SCARTs.
 * connect to bus pirate: `screen /dev/ttyUSBx 115200`.
-* switch bus pirate to I²C: press `m` to select mode, then follow menu. speed is irrelevant.
-* upload nanoboot: press Ctrl-A `:` then type `exec .!. ./bpsend.pl nanoboot.bp`.
-* use a jumper to short U11 pins 7/8. this prevents accidental reprogramming, and keeps the board from wearing out the first EEPROM page.
+* switch bus pirate to I²C: press `m` to select mode, then follow menu. speed is irrelevant; 400kHz works fine.
+* upload nanoboot: press Ctrl-A `:` then type `exec .!. ./bpsend.pl nanoboot.bp`. you shouldn't get any NAKs.
+* use a jumper to short U11 pins 7/8. this prevents accidental reprogramming, and keeps the board from wearing out the first EEPROM page whenever it boots.
 * press the reset button
 
 the board is now unbrickable (but not indestructible). the steps above can be repeated easily if the EEPROM does get corrupted. if any further step in the boot chain fails, switch SW1.1 to ON and upload something (probably U-Boot) over Xmodem.
 
-if the bus pirate shows errors during reprogramming, then probably the boot module hangs and thus the I²C bus is blocked. just hold the reset button during the entire programming process programming and things should work.
+if the bus pirate shows errors during reprogramming, then probably the boot module hangs and thus the I²C bus is blocked. just hold the reset button during the entire programming process and things should work.
 
 ## Installing U-Boot using nanoboot
 
 * connect to nanoboot: `screen /dev/ttyUSBx 38400`.
-* switch SW1.1 to ON and press reset. nanoboot should eventually respond with an `X` prompt.
+* switch SW1.1 to ON and press reset. nanoboot should quickly respond with an `X` prompt.
 * upload U-Boot: press Ctrl-A `:` then type `exec !! sx u-boot.ecw`. you'll want to use the one with Linux ECC and proper length in the header.
 * cancel autoboot. if you miss it and it fails to boot, that's fine but don't do a `saveenv` without resetting again.
 * do `mtdparts default` if necessary. it *is* necessary when converting from Windows CE.
@@ -32,7 +32,7 @@ U-Boot is now installed and should be loaded on boot. if it shows errors, initia
 this is primarily necessary if converting from Windows CE.
 
 * reset the board and cancel autoboot, so it doesn't mess up the environment.
-* do `mtdparts default` again. edit it if desired, but keep U-Boot where it is.
+* do `mtdparts default` again. edit it if desired, but keep `U-Boot`, `Env` and `bbt` where they are.
 * `nand erase.part Env` to convert the environment to Linux ECC layout.
 * `saveenv` to persist changes.
 * `nand scrub.part bbt` to convert the bad block table to Linux ECC layout.
@@ -45,7 +45,7 @@ this is primarily necessary if converting from Windows CE.
 * in Linux, write the kernel to flash: `nandwrite -p /dev/mtd2 uImage`.
 	* if necessary, erase partition first: `flash_eraseall /dev/mtd2`.
 
-that's it. you can also configure U-Boot to load the kernel from somewhere else, eg. from `/boot/linux` on SATA. this is slower, but easier to recover from: just connect the SATA device to a Linux PC and change the file.
+that's it. you can also configure U-Boot to load the kernel from somewhere else, eg. from `/boot/linux` on SATA. this is slower, but makes it easier to recover from trouble: just connect the SATA device to a Linux PC and change the file.
 
 ## Recommended Flash partition tables
 
@@ -55,7 +55,7 @@ that's it. you can also configure U-Boot to load the kernel from somewhere else,
 setenv mtdparts mtdparts=nxp-0:528k(U-Boot)ro,32k(Env),32k(bbt),4512k(Linux),59M(ROMFS),16k(info)
 ```
 
-the info partition is strongly recommended because Windows CE will blindly overwrite that page. it doesn't have to contain anything valid; it's just there to prevent Windows from corrupting data if Windows CE is ever booted.
+keeping the info partition is strongly recommended because Windows CE will blindly overwrite that page. it doesn't have to contain anything valid; it's just there to prevent Windows from corrupting data if Windows CE is ever booted.
 
 ### With WinCE0 (recovery) support
 
@@ -71,7 +71,7 @@ note that while the WinCE0 image is ~4MB, in U-Boot compressed format it is actu
 setenv mtdparts mtdparts=nxp-0:16k(FlashReader)ro,512k(U-Boot)ro,32k(Env),32k(bbt),4512k(Linux),45M(ROMFS),14M(WinCE1),16k(info)
 ```
 
-note that while the WinCE1 image is ~26MB, it can be compressed down to <13MB when loading it from the U-Boot image.
+note that while the WinCE1 image is ~26MB, it will be compressed down to <13MB when loading it from the U-Boot image.
 
 ### With both Windows CE images
 
