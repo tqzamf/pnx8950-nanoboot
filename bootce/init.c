@@ -12,8 +12,9 @@
 
 extern void _start(void);
 extern void __image_end(void);
+#define STACK_SIZE 0xf000
 
-static void init(void) {
+static inline void init(void) {
 	// reset all PCI devices, because U-Boot leaves them in a state that
 	// Windows CE cannot handle. the system reset is a fairly radical way
 	// of doing that, but it's a lot easier than writing a PCI driver.
@@ -22,16 +23,15 @@ static void init(void) {
 	// WinCE-shaped hole so we don't overwrite ourselves, and don't kill
 	// our stack either.
 	#define INIT(from, to) \
-		for (uint32_t addr = from; addr != to; addr += 16) { \
+		for (uint32_t addr = (from); addr != (to); addr += 16) { \
 			uint32_t *word = (uint32_t *) addr; \
 			word[0] = 0; \
 			word[1] = 0; \
 			word[2] = 0; \
 			word[3] = 0; \
 		}
-	INIT(0x80000000, (uint32_t) _start);
-	INIT((uint32_t) __image_end, 0x84000000);
-	INIT(0x84010000, 0x88000000);
+	INIT(0x80000000, ((uint32_t) _start) - STACK_SIZE);
+	INIT((uint32_t) __image_end, 0x88000000);
 	cache_flush();
 	// CMEM registers, as set up by FlashReader. U-Boot has a different
 	// layout.
@@ -68,20 +68,6 @@ static void init(void) {
 	UART2(000, 01000000);
 	UART2(004, 00000003);
 	UART2(008, 00000005);
-	// pretend we're the original bootscript
-	GLOBAL1(500, 00130001);
-	GLOBAL1(504, 00000006);
-	GLOBAL1(508, 00010014);
-	// manufacturer ID, hardware ID and board UUID, as set by the
-	// original bootschript
-	GLOBAL2(500, ffffffff);
-	GLOBAL2(504, ffffffff);
-	GLOBAL2(508, ffffffff);
-	GLOBAL2(50c, ffffffff);
-	GLOBAL2(510, ffffffff);
-	GLOBAL2(514, ffffffff);
-	GLOBAL2(518, 33533046);
-	GLOBAL2(51c, 54476d62);
 	// release system reset. the PCI devices should now be in a clean
 	// initial state that Windows CE can handle.
 	RESET = RELEASE_SYS_RESET;
@@ -95,9 +81,25 @@ static void init(void) {
 	configPR &= ~CPR_MAP;
 	configPR &= CPR_VALID;
 	MTC0_CONFIGPR(configPR);
+	// pretend we're the original bootscript. this is at the end so we
+	// don't do a mtc0 in the branch delay slot; that appears a bit TOO
+	// bold.
+	GLOBAL1(500, 00130001);
+	GLOBAL1(504, 00000006);
+	GLOBAL1(508, 00010014);
+	// manufacturer ID, hardware ID and board UUID, as set by the
+	// original bootschript
+	GLOBAL2(500, ffffffff);
+	GLOBAL2(504, ffffffff);
+	GLOBAL2(508, ffffffff);
+	GLOBAL2(50c, ffffffff);
+	GLOBAL2(510, ffffffff);
+	GLOBAL2(514, ffffffff);
+	GLOBAL2(518, 33533046);
+	GLOBAL2(51c, 54476d62);
 }
 
-extern void image_main(void);
+extern void image_main(void) __attribute__((noreturn));
 
 int main(void) {
 	// perform some hardware initialization that nanoboot omits
@@ -112,9 +114,9 @@ void _start(void) {
 	// be stale data in the cache without this flush.
 	cache_flush();
 	// set up a safe stack that won't be overwritten by memory clearing
-	asm volatile("li $sp, 0x84010000":::"memory");
+	asm volatile("move $sp, %0" :: "r" (_start) : "memory");
 	// jump to cached memory. runs waaay faster.
 	uint32_t main_addr = UNCACHED_BASE | (uint32_t) main;
-	int (* main_uncached)(void) = (void *) (main_addr - UNCACHED_BASE + DRAM_BASE);
-	main_uncached();
+	int (* main_cached)(void) = (void *) (main_addr - UNCACHED_BASE + DRAM_BASE);
+	main_cached();
 }
