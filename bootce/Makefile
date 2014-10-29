@@ -10,7 +10,7 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=wince0.uImage wince1.uImage
+TARGETS=wince0.elf wince0.uImage wince1.elf wince1.uImage
 
 all: $(TARGETS)
 
@@ -31,7 +31,7 @@ clean:
 		-d $*.gz $@
 
 %.o: %.bin
-	dd if=$*.bin bs=512 skip=1 of=$*.tmp
+	perl strip-header.pl <$*.bin >$*.tmp
 	$(OC) -I binary -O elf32-tradlittlemips -B mips:isa32 \
 		--change-addresses 0x80100000 --rename-section .data=.image \
 		--set-section-flags .image=contents,alloc,load,readonly,code \
