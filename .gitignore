@@ -12,3 +12,4 @@ boot.bin
 ecctester
 bootce/wince?.bin
 bootce/wince?.gz
+bootce/wince?.elf

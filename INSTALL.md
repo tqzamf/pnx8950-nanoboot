@@ -46,3 +46,37 @@ this is primarily necessary if converting from Windows CE.
 	* if necessary, erase partition first: `flash_eraseall /dev/mtd2`.
 
 that's it. you can also configure U-Boot to load the kernel from somewhere else, eg. from `/boot/linux` on SATA. this is slower, but easier to recover from: just connect the SATA device to a Linux PC and change the file.
+
+## Recommended Flash partition tables
+
+### Without any Windows CE
+
+```
+setenv mtdparts mtdparts=nxp-0:528k(U-Boot)ro,32k(Env),32k(bbt),4512k(Linux),59M(ROMFS),16k(info)
+```
+
+the info partition is strongly recommended because Windows CE will blindly overwrite that page. it doesn't have to contain anything valid; it's just there to prevent Windows from corrupting data if Windows CE is ever booted.
+
+### With WinCE0 (recovery) support
+
+```
+setenv mtdparts mtdparts=nxp-0:16k(FlashReader)ro,512k(U-Boot)ro,32k(Env),32k(bbt),4512k(Linux),56M(ROMFS),3M(WinCE0),16k(info)
+```
+
+note that while the WinCE0 image is ~4MB, in U-Boot compressed format it is actually just slightly larger than 2MB.
+
+### With WinCE1 (Desktop) support
+
+```
+setenv mtdparts mtdparts=nxp-0:16k(FlashReader)ro,512k(U-Boot)ro,32k(Env),32k(bbt),4512k(Linux),45M(ROMFS),14M(WinCE1),16k(info)
+```
+
+note that while the WinCE1 image is ~26MB, it can be compressed down to <13MB when loading it from the U-Boot image.
+
+### With both Windows CE images
+
+```
+setenv mtdparts mtdparts=nxp-0:16k(FlashReader)ro,512k(U-Boot)ro,32k(Env),32k(bbt),4512k(Linux),42M(ROMFS),14M(WinCE1),3M(WinCE0),16k(info)
+```
+
+you get the idea. just subtract whatever additional size you need from the `ROMFS` partition.
