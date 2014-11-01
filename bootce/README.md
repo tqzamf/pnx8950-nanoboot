@@ -35,11 +35,11 @@ Please update either the flash or include the DSP image into the CE image
 
 ## Limitations
 
-* it isn't autonomous. it needs U-Boot to load it into memory.
+* it isn't autonomous. you need U-Boot to load it into memory.
 
 * with `loadaddr=0x82000000`, it is probably limited to ~31MB uncompressed image size.
 
-  workaround: `setenv loadaddr 0x85000000`, for ~120MB uncompressed, 72MB compressed max.
+  workaround: `setenv loadaddr 0x85500000` for ~84MB uncompressed, 43MB compressed max. at that point, you start running out of flash.
 
 * it cannot load the FlashReader. but then again, why should it, when it can boot WinCE directly.
 
