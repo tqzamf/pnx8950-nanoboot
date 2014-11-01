@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include "hw.h"
+#include <hw.h>
 
 int puts(char *string) {
 	while (*string) {

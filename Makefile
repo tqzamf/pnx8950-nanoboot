@@ -45,18 +45,6 @@ boot.uImage: boot.bin
 %.bp: %.ee boot.bin eecompile.jar
 	./eecompile.jar -O1 -fbp -o $@ -v $*.ee
 
-# apps
-
-%.aelf: %.o appstart.o
-	$(LD) $(LDFLAGS) -o $@ -T app.x -nostdlib $^
-
-%.ecw: %.aelf
-	$(OC) -j .text -O binary $< $@
-
-%.uImage: %.ecw
-	$(MKIMAGE) -A mips -O linux -T kernel -C none -n "$*" \
-		-a 0xA00FFE00 -e 0xA0100000 -d $*.ecw $@
-
 # ...and rules for C and assembly files
 
 %.o: %.S
