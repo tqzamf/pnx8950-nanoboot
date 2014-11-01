@@ -27,7 +27,7 @@ export int16_t xmodem_get_block(uint8_t *base, int in_header) {
 	// if there was no useable block for 10s, give up and try again.
 	// don't do that while waiting for the header, though.
 	if (!in_header && TIMER_TIMED_OUT(xmodem_timeout, XMODEM_LONG_TIMEOUT))
-		return -2;
+		return 0;
 
 	// no need to flush here. the RX will wait until the sender is
 	// actually sending something, which it won't do before having

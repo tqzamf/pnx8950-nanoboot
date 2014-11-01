@@ -28,7 +28,7 @@ static inline uint32_t get_block(uint8_t *base, int in_header) {
 	else
 		// skip NAND reading if SW1.1 = on, to allow recovery from an
 		// image that loads properly but crashes.
-		return -2;
+		return 0;
 }
 
 static inline void call_image(uint32_t addr) {
@@ -63,9 +63,6 @@ static inline void load_and_call_image(void) {
 
 		int16_t res = get_block(base, in_header);
 		if (res == 0)
-			// end of file. stop reading; there is nothing more to read.
-			break;
-		if (res == -2)
 			// serious error or end of file condition. don't retry.
 			// if this happens while waiting for the header, the normal
 			// fallback will start receiving an image over xmodem,

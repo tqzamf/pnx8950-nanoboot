@@ -16,7 +16,7 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// end of file! we read the entire flash and found nothing...
 	// the core will generate an appropriate error message.
 	if (nand_base > FLASH_END)
-		return -2;
+		return 0;
 
 	if ((block & 0x3f) == 0x3f) {
 		if (in_header)
@@ -103,7 +103,7 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	// condition that we cannot recover from.
 	if (!in_header) {
 		UART_TX('U');
-		return -2;
+		return 0;
 	}
 	
 	// if we are still waiting for the header, we want the main loop to
