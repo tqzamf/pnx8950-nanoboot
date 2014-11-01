@@ -10,7 +10,7 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin eecompile.jar nanoboot.bp ramcheck.ecw ecctester
+TARGETS=boot.bin eecompile.jar nanoboot.bp ecctester
 
 all: $(TARGETS)
 
@@ -52,6 +52,8 @@ boot.uImage: boot.bin
 	$(AS) $(ASFLAGS) -o $@ $*.s
 
 %.o: %.c
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CC) $(CFLAGS) -o $*.s -S $^
+	perl reduce-stack.pl $*.s
+	$(CC) $(CFLAGS) -o $@ -c $*.s
 
 .PHONY: all clean
