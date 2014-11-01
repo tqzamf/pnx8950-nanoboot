@@ -93,34 +93,31 @@ export int16_t nand_get_block(uint8_t *base, int expect_header) {
 	uint32_t ecc = (ecc0 << 14) | (ecc1 << 6) | (ecc2 >> 2);
 
 	// try to correct any errors that might have crept into the NAND
-	// data. ECC can correct any single-bit error; in that case, a
-	// warning will be emitted before reading the next block. we warn
-	// even before the header, under the assumption that a different
-	// ECC format should cause uncorrectable errors, so if the error
-	// was correctable, the ECC format was probably right.
+	// data. ECC can correct any single-bit error, but if the block
+	// isn't refreshed soo, it might develop an uncorrectable 2-bit
+	// error. therefore, emit a warning even on single-bit errors.
 	uint32_t num_errors = ecc_correct(base, ecc);
-	if (num_errors == 1)
+	switch (num_errors) {
+	case 1:
 		UART_TX('E');
-	if (num_errors <= 1) {
+		// fallthrough!
+	case 0:
 		if (expect_header && !is_header(base))
 			// expecting a header block, but this isn't one yet.
 			// next one!
 			return -1;
 		return 256;
-	}
 	
-	// uncorrectable error in the data area. that's a fatal error
-	// condition that we cannot recover from.
-	if (!expect_header) {
+	default:
 		UART_TX('U');
-		return 0;
+
+		// uncorrectable error in the data area. that's a fatal error
+		// condition that we cannot recover from.
+		if (!expect_header)
+			return 0;
+		// if we are still waiting for the header, we want the main loop
+		// to continue calling us until we finally find a valid header,
+		// or run out of pages to read.
+		return -1;
 	}
-	
-	// if we are still waiting for the header, we want the main loop to
-	// continue calling us until we finally find a valid header, or run
-	// out of pages to read.
-	// uncorrectable errors are expected to happen a lot before the
-	// header, where the flash might use a different ECC format, so we
-	// don't warn about it there.
-	return -1;
 }

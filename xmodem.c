@@ -105,7 +105,8 @@ export int16_t xmodem_get_block(uint8_t *base, int expect_header) {
 		// expecting a header block, but didn't get one. cancel
 		// transmission; retrying won't help for an invalid image.
 		// minimum of 2 CANs required to pevent line noise from aborting
-		// transfers.
+		// transfers; send 3 to be on the safe side.
+		UART_TX(CAN);
 		UART_TX(CAN);
 		UART_TX(CAN);
 		return 0;
