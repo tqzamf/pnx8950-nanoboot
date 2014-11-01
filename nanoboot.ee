@@ -35,9 +35,6 @@ pci-xio.814 = 00494817 # flash aperture
 # reads the register, and if nanoboot never set it, U-Boot will see
 # uninitialized data...
 pci-xio.830 = 00370000 # flash command: read lower half-page
-# misc
-global2.60c = 00000001
-global2.050 = 00000001 # PCI INTA enable
 # enable DSCN to PMAN bridge
 global2.208 = 00000001
 global2.204 = 08000000

@@ -45,7 +45,7 @@ pci-xio.814 = 00494817 # flash aperture
 pci-xio.830 = 00370000 # flash command
 pci-xio.06c = 00591131 # PCI vendor & device ID
 # misc
-global2.60c = 00000001
+global2.60c = 00000001 # probably VIP control
 global2.050 = 00000001 # PCI INTA enable
 # enable DSCN to PMAN bridge
 global2.208 = 00000001

@@ -68,6 +68,9 @@ static inline void init(void) {
 	UART2(000, 01000000);
 	UART2(004, 00000003);
 	UART2(008, 00000005);
+	// misc registers (for good measure; not really required)
+	GLOBAL2(60c, 00000001); // probably VIP control
+	GLOBAL2(050, 00000001); // PCI INTA enable
 	// release system reset. the PCI devices should now be in a clean
 	// initial state that Windows CE can handle.
 	RESET = RELEASE_SYS_RESET;
