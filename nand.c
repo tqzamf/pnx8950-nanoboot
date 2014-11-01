@@ -18,7 +18,7 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	if (nand_base > FLASH_END)
 		return -2;
 
-	if ((block & 0x3f) == 0) {
+	if ((block & 0x3f) == 0x3f) {
 		if (in_header)
 			UART_TX('.');
 		else
