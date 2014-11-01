@@ -4,31 +4,17 @@
 
 #include "hw.h"
 #include "cache.h"
+#include "header.h"
 #include "xmodem.c"
 #include "nand.c"
 
-#define IMAGE_LOAD_ADDR     (DRAM_BASE | 0x00100000)
-#define IMAGE_HEADER_SIZE 0x200
-#define IMAGE_HEADER_SIGNATURE 0x57434530
-struct __attribute__((packed)) image_header {
-	uint32_t signature1;
-	uint32_t length;
-	uint32_t signature2;
-	uint32_t entrypoint;
-};
-
 static uint8_t xmodem_enabled uninitialized;
 
-static inline uint32_t get_block(uint8_t *base, int in_header) {
+static inline uint32_t get_block(uint8_t *base, int expect_header) {
 	if (xmodem_enabled)
-		return xmodem_get_block(base, in_header);
-	else if (SW11_STATUS() == 0)
-		// SW1.1 is off. try reading the flash.
-		return nand_get_block(base, in_header);
+		return xmodem_get_block(base, expect_header);
 	else
-		// skip NAND reading if SW1.1 = on, to allow recovery from an
-		// image that loads properly but crashes.
-		return 0;
+		return nand_get_block(base, expect_header);
 }
 
 static inline void call_image(uint32_t addr) {
@@ -50,18 +36,17 @@ static inline void call_image(uint32_t addr) {
 
 #define INFINITY (0xffff0000)
 static inline void load_and_call_image(void) {
-	#define HEADER_BASE ((void *) (IMAGE_LOAD_ADDR - IMAGE_HEADER_SIZE))
-	struct image_header *header = (void *) HEADER_BASE;
-	uint8_t *base = HEADER_BASE;
+	struct image_header *header = (void *) IMAGE_HEADER_BASE;
+	uint8_t *base = IMAGE_HEADER_BASE;
 	uint8_t *data_end = (void *) INFINITY;
 
 	while (((uint32_t) base) < (((uint32_t) data_end) + 128)) {
 		// we intentionally try to read "beyond" end of file. this is
 		// harmless on flash, and gives xmodem a chance to end the
 		// transfer cleanly.
-		int in_header = ((uint32_t) data_end) == INFINITY;
+		int expect_header = ((uint32_t) data_end) == INFINITY;
 
-		int16_t res = get_block(base, in_header);
+		int16_t res = get_block(base, expect_header);
 		if (res == 0)
 			// serious error or end of file condition. don't retry.
 			// if this happens while waiting for the header, the normal
@@ -72,15 +57,10 @@ static inline void load_and_call_image(void) {
 			// invalid block. try again.
 			continue;
 
-		if (!in_header)
-			// got a good data block; next one, please!
-			base += res;
-		else if (header->signature1 == IMAGE_HEADER_SIGNATURE
-					&& header->signature2 == IMAGE_HEADER_SIGNATURE) {
+		if (expect_header)
 			// found a valid header. start getting data.
 			data_end = (void *) (IMAGE_LOAD_ADDR + header->length);
-			base += res;
-		}
+		base += res;
 	}
 
 	// add a linebreak to separate nanoboot progress output from the next

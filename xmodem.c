@@ -8,6 +8,7 @@
 #define EOT 0x04
 #define STX 0x02
 #define SOH 0x01
+#define CAN 0x18
 #define CRC 'C'
 
 static uint8_t xmodem_ack uninitialized;
@@ -23,10 +24,10 @@ export void xmodem_init(void) {
 	// is received.
 }
 
-export int16_t xmodem_get_block(uint8_t *base, int in_header) {
+export int16_t xmodem_get_block(uint8_t *base, int expect_header) {
 	// if there was no useable block for 10s, give up and try again.
 	// don't do that while waiting for the header, though.
-	if (!in_header && TIMER_TIMED_OUT(xmodem_timeout, XMODEM_LONG_TIMEOUT))
+	if (!expect_header && TIMER_TIMED_OUT(xmodem_timeout, XMODEM_LONG_TIMEOUT))
 		return 0;
 
 	// no need to flush here. the RX will wait until the sender is
@@ -100,6 +101,16 @@ export int16_t xmodem_get_block(uint8_t *base, int in_header) {
 		// incorrect checksum. retry.
 		return -1;
 	
+	if (expect_header && !is_header(base)) {
+		// expecting a header block, but didn't get one. cancel
+		// transmission; retrying won't help for an invalid image.
+		// minimum of 2 CANs required to pevent line noise from aborting
+		// transfers.
+		UART_TX(CAN);
+		UART_TX(CAN);
+		return 0;
+	}
+
 	// correct block received; next one please
 	xmodem_block = block;
 	xmodem_ack = ACK;

@@ -8,10 +8,15 @@ export void nand_init(void) {
 	nand_base = (void *) (FLASH_BASE - 256);
 }
 
-export int16_t nand_get_block(uint8_t *base, int in_header) {
+export int16_t nand_get_block(uint8_t *base, int expect_header) {
 	nand_base += 256/4;
 	uint8_t block = ((uint32_t) nand_base) >> 8;
 	uint8_t halfpage = block & 0x01;
+
+	if (SW11_STATUS() != 0)
+		// skip NAND reading if SW1.1 = on, to allow recovery from an
+		// image that loads properly but crashes.
+		return 0;
 
 	// end of file! we read the entire flash and found nothing...
 	// the core will generate an appropriate error message.
@@ -19,7 +24,7 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 		return 0;
 
 	if ((block & 0x3f) == 0x3f) {
-		if (in_header)
+		if (expect_header)
 			UART_TX('.');
 		else
 			UART_TX('#');
@@ -96,12 +101,17 @@ export int16_t nand_get_block(uint8_t *base, int in_header) {
 	uint32_t num_errors = ecc_correct(base, ecc);
 	if (num_errors == 1)
 		UART_TX('E');
-	if (num_errors <= 1)
+	if (num_errors <= 1) {
+		if (expect_header && !is_header(base))
+			// expecting a header block, but this isn't one yet.
+			// next one!
+			return -1;
 		return 256;
+	}
 	
 	// uncorrectable error in the data area. that's a fatal error
 	// condition that we cannot recover from.
-	if (!in_header) {
+	if (!expect_header) {
 		UART_TX('U');
 		return 0;
 	}
