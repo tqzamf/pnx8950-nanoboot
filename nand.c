@@ -2,14 +2,13 @@
 #include "hw.h"
 #include "ecc.c"
 
-static volatile uint32_t *nand_base uninitialized;
+static uint32_t *nand_base uninitialized;
 
 export void nand_init(void) {
-	nand_base = (void *) (FLASH_BASE - 256);
+	nand_base = (void *) FLASH_BASE;
 }
 
 export int16_t nand_get_block(uint8_t *base, int expect_header) {
-	nand_base += 256/4;
 	uint8_t block = ((uint32_t) nand_base) >> 8;
 	uint8_t halfpage = block & 0x01;
 
@@ -87,6 +86,13 @@ export int16_t nand_get_block(uint8_t *base, int expect_header) {
 		ecc2 = base[256 + 7];
 		bbm = base[256 + 5];
 	}
+	// increment nand address for next block because we didn't do that
+	// in the loop. we need to do this for both half-pages because it's
+	// also used to determine which half-page we're at!
+	// doing it after reading the ECC saves a bit of space because GCC
+	// can combine the IF statements...
+	nand_base += 256/4;
+
 	if (bbm != 0xff)
 		// OOB area byte 5 programmed: bad block; next one, please!
 		return -1;
