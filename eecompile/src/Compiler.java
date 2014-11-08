@@ -6,15 +6,13 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import core.ModuleParser;
-import core.Script;
-import core.ScriptParser;
-
-
 import output.BinaryFormatter;
 import output.BusPirateFormatter;
 import output.Formatter;
 import output.HexFormatter;
+import core.ModuleParser;
+import core.Script;
+import core.ScriptParser;
 
 public class Compiler {
 	private final boolean optimize;
@@ -57,6 +55,7 @@ public class Compiler {
 		File output = null;
 		Formatter formatter = new BusPirateFormatter();
 		boolean verbose = false;
+		int size = 2048;
 		while (args.hasNext()) {
 			final String arg = args.next();
 			if (arg.equals("-v"))
@@ -75,6 +74,14 @@ public class Compiler {
 				else if (level == 1)
 					optimize = true;
 				else
+					usage();
+			} else if (arg.startsWith("-s")) {
+				if (arg.equals("-s"))
+					size = Integer.parseInt(args.next());
+				else
+					size = Integer.parseInt(arg.substring(2));
+
+				if (size < 0)
 					usage();
 			} else if (arg.equals("-o")) {
 				if (output != null)
@@ -111,6 +118,11 @@ public class Compiler {
 			c.load(file);
 		}
 		final byte[] data = c.compile();
+		if (data.length > size) {
+			System.err.println("script too long: " + data.length + " bytes is "
+					+ (data.length - size) + " too many");
+			System.exit(1);
+		}
 		formatter.write(data, output);
 		if (verbose)
 			System.out.println("wrote " + data.length + " bytes to " + output);
@@ -124,6 +136,7 @@ public class Compiler {
 		System.err.println("  -O level   enable optimization [0]");
 		System.err.println("     0       don't optimize");
 		System.err.println("     1       do optimize");
+		System.err.println("  -s size    set maximum size [2048]");
 		System.err.println("  -f format  set output format [hex]");
 		System.err.println("     bp      bus pirate commands");
 		System.err.println("     hex     hex pairs, space-separated");
