@@ -10,7 +10,8 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=wince0.elf wince0.uImage wince1.elf wince1.uImage
+TARGETS=wince0.elf wince0.ecw wince0.uImage \
+	wince1.elf wince1.ecw wince1.uImage
 
 all: $(TARGETS)
 
@@ -20,11 +21,11 @@ clean:
 %.elf: %.o init.o
 	$(LD) $(LDFLAGS) -o $@ -T wince.x -nostdlib $^
 
-%.raw: %.elf
+%.ecw: %.elf
 	$(OC) -j .text -O binary $< $@
 
-%.gz %.uImage: %.raw
-	gzip --best <$*.raw >$*.gz
+%.gz %.uImage: %.ecw
+	gzip --best <$*.ecw >$*.gz
 	$(MKIMAGE) -A mips -O linux -T kernel -C gzip -n "$*" \
 		-a $$($(NM) $*.elf | awk -f get-entry-point.awk) \
 		-e $$($(NM) $*.elf | awk -f get-entry-point.awk) \
