@@ -132,13 +132,6 @@ static inline void init(void) {
 
 extern void image_main(void) __attribute__((noreturn));
 
-int main(void) {
-	// perform some hardware initialization that nanoboot omits
-	init();
-	// call the image
-	image_main();
-}
-
 void _start(void) __attribute__((section(".start")));
 void _start(void) {
 	// flush cache, because U-Boot doesn't do that itself. there could
@@ -146,8 +139,9 @@ void _start(void) {
 	cache_flush();
 	// set up a safe stack that won't be overwritten by memory clearing
 	asm volatile("move $sp, %0" :: "r" (_start) : "memory");
-	// jump to cached memory. runs waaay faster.
-	uint32_t main_addr = UNCACHED_BASE | (uint32_t) main;
-	int (* main_cached)(void) = (void *) (main_addr - UNCACHED_BASE + DRAM_BASE);
-	main_cached();
+
+	// perform some hardware initialization that nanoboot omits
+	init();
+	// call the image
+	image_main();
 }

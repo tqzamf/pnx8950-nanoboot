@@ -1,1 +1,1 @@
-$3 == "_start" { printf "0x%08x", (or(and(strtonum("0x"$1), 0xffffffff), 0xa0000000)) }
+$3 == "_start" { printf "0x%08x", (or(strtonum("0x" substr($1,9,8)), 0x80000000)) }
