@@ -1,40 +1,7 @@
 #include <stdint.h>
 #include <hw.h>
 
-int puts(char *string) {
-	while (*string) {
-		UART_TX((uint8_t) *string);
-		string++;
-		UART_FLUSH();
-	}
-	return 0;
-}
-
-void putx(uint32_t val) {
-	for (int i = 0; i < 8; i++) {
-		uint32_t nybble = val >> 28;
-		if (nybble <= 9)
-			UART_TX(nybble + '0');
-		else
-			UART_TX(nybble + 'a' - 10);
-		val <<= 4;
-	}
-	UART_FLUSH();
-}
-
-void put8(uint8_t val) {
-	uint32_t nybble = val >> 4;
-	if (nybble <= 9)
-		UART_TX(nybble + '0');
-	else
-		UART_TX(nybble + 'a' - 10);
-	nybble = val & 15;
-	if (nybble <= 9)
-		UART_TX(nybble + '0');
-	else
-		UART_TX(nybble + 'a' - 10);
-	UART_FLUSH();
-}
+#include "lib.c"
 
 int main(void) {
 	// flush previous output, especially xmodem
@@ -57,7 +24,7 @@ int main(void) {
 	int global_err = 0;
 	// check every MB separately
 	for (uint32_t addr = 0x80000000; addr < 0x90000000; addr += 0x100000) {
-		putx(addr);
+		putx32(addr);
 		puts(":");
 		if (addr == 0x84000000 /* nanoboot */
 				|| addr == 0x80100000 /* ramcheck itself */
@@ -98,11 +65,11 @@ int main(void) {
 			if (block[k] != x) {
 				// block mismatch, probably bad RAM: warn
 				puts("\r\n\t!");
-				putx((uint32_t) &block[k]);
+				putx32((uint32_t) &block[k]);
 				puts(" ");
-				put8(block[k]);
+				putx8(block[k]);
 				puts(" ");
-				put8(x);
+				putx8(x);
 				err = 1;
 				global_err = 1;
 			}
