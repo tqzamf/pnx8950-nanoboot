@@ -10,7 +10,8 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=ramcheck.ecw ramcheck.uImage mmioscan.ecw mmioscan.uImage
+TARGETS=ramcheck.ecw ramcheck.uImage mmioscan.ecw mmioscan.uImage \
+	cp0regs.ecw cp0regs.uImage
 
 all: $(TARGETS)
 
