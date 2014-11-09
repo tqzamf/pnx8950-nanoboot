@@ -11,7 +11,7 @@ OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
 TARGETS=ramcheck.ecw ramcheck.uImage mmioscan.ecw mmioscan.uImage \
-	cp0regs.ecw cp0regs.uImage
+	cp0regs.ecw cp0regs.uImage freqs.ecw freqs.uImage
 
 all: $(TARGETS)
 
