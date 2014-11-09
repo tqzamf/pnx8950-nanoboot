@@ -19,6 +19,7 @@ static inline void init(void) {
 	// Windows CE cannot handle. the system reset is a fairly radical way
 	// of doing that, but it's a lot easier than writing a PCI driver.
 	RESET = ASSERT_SYS_RESET;
+
 	// clear memory. WinCE expects some areas to be zeroed. leave a
 	// WinCE-shaped hole so we don't overwrite ourselves, and don't kill
 	// our stack either.
@@ -33,13 +34,32 @@ static inline void init(void) {
 	INIT(0x80000000, ((uint32_t) _start) - STACK_SIZE);
 	INIT((uint32_t) __image_end, 0x88000000);
 	cache_flush();
+
 	// CMEM registers, as set up by FlashReader. U-Boot has a different
 	// layout.
 	MTC0_CMEM(0, 0x1be00000, CMEM_SIZE_2M);
 	MTC0_CMEM(1, 0x10000000, CMEM_SIZE_128M);
 	MTC0_CMEM(2, 0x18000000, CMEM_SIZE_64M);
 	MTC0_CMEM(3, 0x1c000000, CMEM_SIZE_64M);
-	// start some extra clocks that nanoboot omits
+	// stop the timers, enable TLB, disable static mapping. nanoboot and
+	// U-Boot have the TLB disabled; Windows CE wants it enabled but
+	// unlike Linux doesn't enable it itself.
+	// the timers are just for good measure; they should be stopped anyway.
+	uint32_t configPR = MFC0_CONFIGPR();
+	configPR |= CPR_T1 | CPR_T2 | CPR_T3;
+	configPR |= CPR_TLB;
+	configPR &= ~CPR_MAP;
+	configPR &= CPR_VALID;
+	MTC0_CONFIGPR(configPR);
+
+	// release system reset. memory clearing takes a while, so the PCI
+	// devices should now be in a clean initial state that Windows CE
+	// can handle.
+	RESET = RELEASE_SYS_RESET;
+
+	// perform some extra hardware init that the original bootscript does
+	// but nanoboot omits.
+	// start some extra (AV system) clocks
 	CLOCK(004, 00b40904); // TM32 1
 	CLOCK(008, 3828050c); // QVCP 1
 	CLOCK(00c, 3828050c); // QVCP 2
@@ -56,37 +76,20 @@ static inline void init(void) {
 	CLOCK(504, 00000073); // MBS 3
 	CLOCK(708, 00000003); // unknown
 	// some UART setup normally done by FlashReader
-	UART1(000, 00040000);
-	UART1(000, 00020000);
-	UART1(fe8, 000000ff);
-	UART1(000, 01000000);
-	UART1(004, 00000003);
-	UART1(008, 00000005);
-	UART2(000, 00040000);
-	UART2(000, 00020000);
-	UART2(fe8, 000000ff);
-	UART2(000, 01000000);
-	UART2(004, 00000003);
-	UART2(008, 00000005);
+	UART2(000, 01060000); // flush buffers and configure for 8-bit
+	UART2(fe8, 00001fff); // clear any pending interrupts
+	UART2(004, 00000003); // setup modem & flow control lines
+	UART2(008, 00000005); // set baud rate to 38.4k, as by FlashReader
+	// UART1 is simpler. modem / flow control isn't connected, and we
+	// leave the baud rate as it is, even if it's wrong. UART1 is used
+	// for the kernel log only, so it's actually convenient if the baud
+	// rate doesn't have to be changed on the other end.
+	UART1(000, 01060000); // flush / 8-bit
+	UART1(fe8, 00001fff); // interrupts
 	// misc registers (for good measure; not really required)
 	GLOBAL2(60c, 00000001); // probably VIP control
 	GLOBAL2(050, 00000001); // PCI INTA enable
-	// release system reset. the PCI devices should now be in a clean
-	// initial state that Windows CE can handle.
-	RESET = RELEASE_SYS_RESET;
-	// stop the timers, enable TLB, disable static mapping. nanoboot and
-	// U-Boot have the TLB disabled; Windows CE wants it enabled but
-	// unlike Linux doesn't enable it itself. the timers are just for
-	// good measure; they should be stopped anyway.
-	uint32_t configPR = MFC0_CONFIGPR();
-	configPR |= CPR_T1 | CPR_T2 | CPR_T3;
-	configPR |= CPR_TLB;
-	configPR &= ~CPR_MAP;
-	configPR &= CPR_VALID;
-	MTC0_CONFIGPR(configPR);
-	// pretend we're the original bootscript. this is at the end so we
-	// don't do a mtc0 in the branch delay slot; that appears a bit TOO
-	// bold.
+	// pretend we're the original bootscript.
 	GLOBAL1(500, 00130001);
 	GLOBAL1(504, 00000006);
 	GLOBAL1(508, 00010014);
