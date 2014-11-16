@@ -5,7 +5,7 @@
 
 int main(void) {
 	// flush previous output, especially xmodem
-	puts("\r\n\r\nRAMcheck\r\n");
+	printf("\nRAMcheck\n");
 	
 	// initialize RC4 state
 	uint8_t s[256];
@@ -24,14 +24,13 @@ int main(void) {
 	int global_err = 0;
 	// check every MB separately
 	for (uint32_t addr = 0x80000000; addr < 0x90000000; addr += 0x100000) {
-		putx32(addr);
-		puts(":");
+		printf("%08x: ", addr);
 		if (addr == 0x84000000 /* nanoboot */
 				|| addr == 0x80100000 /* ramcheck itself */
 				|| addr == 0x87e00000 /* U-Boot's PCI DMA area */
 			) {
 			// that's us; don't shoot ourselves!
-			puts(" skipped\r\n");
+			printf("skipped\r\n");
 			continue;
 		}
 		
@@ -64,12 +63,8 @@ int main(void) {
 			
 			if (block[k] != x) {
 				// block mismatch, probably bad RAM: warn
-				puts("\r\n\t!");
-				putx32((uint32_t) &block[k]);
-				puts(" ");
-				putx8(block[k]);
-				puts(" ");
-				putx8(x);
+				printf("\n\t!%08x %02x %02x", (uint32_t) &block[k],
+						block[k], x);
 				err = 1;
 				global_err = 1;
 			}
@@ -77,13 +72,13 @@ int main(void) {
 		
 		// status
 		if (!err)
-			puts(" OK");
-		puts("\r\n");
+			printf("OK");
+		printf("\n");
 	}
 	if (global_err)
-		puts("WARNING: errors detected! check log for details\r\n");
+		printf("WARNING: errors detected! check log for details\n");
 	else
-		puts("all memory OK\r\n");
+		printf("all memory OK\n");
 	// return to nanoboot. for U-Boot, this crashes the system, because
 	// U-Boot has been overwritten by ramcheck.
 	return 0;

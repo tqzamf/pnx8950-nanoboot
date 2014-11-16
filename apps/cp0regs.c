@@ -6,12 +6,11 @@
 
 int main(void) {
 	// flush previous output, especially xmodem
-	puts("\r\n\r\nMIPS CP0 register dump\r\n");
+	printf("\nMIPS CP0 register dump\n");
 	
-	puts(" R");
+	printf(" R");
 	#define SEL(sel) \
-		puts("        "); \
-		putd(sel);
+		printf("%9d", sel);
 	#define SEL2(sel) \
 		SEL(sel+0); \
 		SEL(sel+1); \
@@ -19,15 +18,12 @@ int main(void) {
 		SEL(sel+3);
 	SEL2(0);
 	SEL2(4);
-	puts("\r\n");
+	printf("\n");
 	
 	#define DUMP(reg,sel) \
-		puts(" "); \
-		putx32(MFC0(reg, sel));
+		printf(" %08x", MFC0(reg, sel));
 	#define DUMPS(reg) \
-		if (reg < 10) \
-			puts(" "); \
-		putd(reg); \
+		printf("%2d", reg); \
 		DUMP(reg, 0); \
 		DUMP(reg, 1); \
 		DUMP(reg, 2); \
@@ -36,7 +32,7 @@ int main(void) {
 		DUMP(reg, 5); \
 		DUMP(reg, 6); \
 		DUMP(reg, 7); \
-		puts("\r\n");
+		printf("\n");
 	#define DUMPS2(reg) \
 		DUMPS(reg+0); \
 		DUMPS(reg+1); \

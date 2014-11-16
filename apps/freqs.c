@@ -8,12 +8,11 @@
 
 int main(void) {
 	// flush previous output, especially xmodem
-	puts("\r\n\r\nclock module frequencies\r\n");
+	printf("\nclock module frequencies\n");
 	
-	puts("   ");
+	printf("   ");
 	#define HEADER(x) \
-		puts("    "); \
-		putx8(x);
+		printf("    %02x", x);
 	#define HEADER2(x) \
 		HEADER(x+0); \
 		HEADER(x+1); \
@@ -21,18 +20,16 @@ int main(void) {
 		HEADER(x+3);
 	HEADER2(0);
 	HEADER2(4);
-	puts(" ");
+	printf(" ");
 	HEADER2(8);
 	HEADER2(12);
-	puts("\r\n");
+	printf("\n");
 
 	volatile unsigned int *cm = (unsigned int *) MMIO_CLOCK_BASE;
 	volatile unsigned int *fcr = &cm[0x104 >> 2];
 	for (int sel = 0; sel < 128; sel++) {
-		if ((sel & 15) == 0) {
-			putx8(sel);
-			puts(" ");
-		}
+		if ((sel & 15) == 0)
+			printf("%02x ", sel);
 
 		*fcr = (sel << 4) | 1;
 		while (!(*fcr & 2));
@@ -40,18 +37,11 @@ int main(void) {
 		
 		int integer = res / 10;
 		int fractional = res % 10;
-		puts(" ");
-		if (integer < 10)
-			puts("  ");
-		else if (integer < 100)
-			puts(" ");
-		putd(integer);
-		puts(".");
-		putd(fractional);
+		printf(" %3d.%d", integer, fractional);
 		if ((sel & 15) == 7)
-			puts(" ");
+			printf(" ");
 		if ((sel & 15) == 15)
-			puts("\r\n");
+			printf("\n");
 	}
 
 	return 0;

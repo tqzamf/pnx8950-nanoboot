@@ -7,7 +7,7 @@
 #define ASSERT_MIPS_SYS_RESET 5
 
 int main(void) {
-	puts("\r\n*** software reset ***\r\n");
+	printf("\n*** software reset ***\n");
 	RESET_CONTROL = ASSERT_MIPS_SYS_RESET;
 	while (1);
 }
