@@ -37,14 +37,8 @@ void _init(void) {
 	configPR |= CPR_T1 | CPR_T2 | CPR_T3;
 	MTC0_CONFIGPR(configPR);
 
-	// initialize and flush cache.
+	// initialize both caches.
 	cache_init();
-	cache_flush();
-	
-	// perform a dummy read to initialize some latches, or something.
-	// this probably isn't needed but we have some hazard cycles to kill
-	// anyway.
-	*((volatile uint32_t *) DRAM_BASE);
 	
 	// enable caches. instruction fetches might not immediately use the
 	// cache, but it should work anyway.

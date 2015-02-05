@@ -87,13 +87,16 @@ static inline void cache_disable(void) {
 }
 
 static inline void cache_init(void) {
-	// initialize data cache.
-	// instruction cache doesn't need this. there is nothing to write
-	// back, so it's fine if the cache entries are uninitialized before
-	// invalidating.
+	// initialize data cache by writing zeros to all cache tags and then
+	// invalidating all entries.
+	// for instruction cache, there is nothing to write back, so it's
+	// sufficient to just invalidate all cache lines.
 	for (uint32_t index = 0; index < ICACHE_LINE * ICACHE_ENTRIES - 1;
-			index += ICACHE_LINE)
+			index += ICACHE_LINE) {
 		DCACHE_INDEX_STORE_TAG(index);
+		ICACHE_INDEX_INVALIDATE(index);
+		DCACHE_INDEX_INVALIDATE_WRITEBACK(index);
+	}
 }
 
 static inline void cache_flush(void) {
