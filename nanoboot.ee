@@ -5,16 +5,14 @@ gpio.014 = 0000ffff
 gpio.018 = 0000ffff
 gpio.01c = 1100eeff
 # set clock frequencies
-clock.000 = 2c410700 # MIPS
-clock.014 = 24590600 # DRAM
-# reset all clocks (appears to be safe to omit...)
-#clock.044 = 000003ff then 00000200
+clock.000 = 2c410700 # MIPS 250MHz
+clock.014 = 24590600 # DRAM 200MHz
 # enable clocks
 clock.100 = 00000003 # MIPS
 clock.200 = 00000003
-clock.20c = 00000002 # DSCN
+clock.20c = 00000002 # DCSN
 clock.210 = 00000002
-clock.214 = 00000004 # unknown but required for MIPS
+clock.214 = 00000004
 clock.218 = 00000004
 clock.714 = 00000003 # I²C
 clock.718 = 00000003
@@ -33,11 +31,11 @@ pci-xio.814 = 00494817 # flash aperture
 # set flash command. unnecessary for nanoboot, but needed by U-Boot
 # flash autodetection when nanoboot doesn't load it from flash: U-Boot
 # reads the register, and if nanoboot never set it, U-Boot will see
-# uninitialized data...
+# wrong data and detect an incorrect flash...
 pci-xio.830 = 00370000 # flash command: read lower half-page
-# enable DSCN to PMAN bridge
+# enable DCSN to PMAN bridge
 global2.208 = 00000001
-global2.204 = 08000000
+global2.204 = 10000000
 # DRAM config
 dram.004 = 00000003 # control
 dram.010 = 00000000 # rank config
@@ -57,20 +55,20 @@ dram.108 = 00000002
 dram.10c = 00000003
 dram.110 = 00000003
 dram.114 = 00000008
-dram.118 = deadabba # unimplemented register
+dram.118 = deadabba # unimplemented register; batch writing saves 4 bytes
 dram.11c = 00000002
 dram.120 = 0000000e
 dram.124 = 00000002
 dram.128 = 00000008
 dram.12c = 00000618
-# reset / start DRAM controller
+# warm-start the DRAM controller (has to be done like this)
 dram.000 = 00002000 then 00000001
 # setup UART for nanoboot
 uart1.000 = 01000000 # 8-bit
 uart1.008 = 00000005 # 38400 baud
 gpio.004 = 00000005 # assign pins to UART
-# try to load nanoboot
+# copy nanoboot to memory and execute it
 load 04010000 "boot.bin"
-global2.010 = 04010001 # MIPS boot address??
+global2.010 = 04010001 # MIPS entry point
 reset.000 = 0000000a # release reset
 halt
