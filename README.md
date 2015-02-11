@@ -11,7 +11,7 @@
 
 the board is now unbrickable (but not indestructible). the steps above can be repeated easily if the EEPROM does get corrupted. if any further step in the boot chain fails, switch SW1.1 to ON and upload something (probably U-Boot) over Xmodem.
 
-if the bus pirate shows errors during reprogramming, then probably the boot module hangs and thus the I²C bus is blocked. just hold the reset button during the entire programming process and things should work.
+if the bus pirate shows errors during reprogramming, then probably the boot module hangs and thus the I²C bus is blocked. just hold the reset button during the entire programming process and things should work. if holding reset powers down the board, power it up while holding reset and program it before releasing reset.
 
 ## Installing U-Boot using nanoboot
 
