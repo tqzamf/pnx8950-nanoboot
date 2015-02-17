@@ -12,7 +12,7 @@ NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
 TARGETS=ramcheck.ecw ramcheck.uImage mmioscan.ecw mmioscan.uImage \
 	cp0regs.ecw cp0regs.uImage freqs.ecw freqs.uImage \
-	reset.ecw reset.uImage
+	reset.ecw reset.uImage poweroff.ecw poweroff.uImage
 
 all: $(TARGETS)
 
