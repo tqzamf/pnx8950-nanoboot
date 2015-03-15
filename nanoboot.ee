@@ -14,8 +14,6 @@ clock.20c = 00000002 # DCSN
 clock.210 = 00000002
 clock.214 = 00000004
 clock.218 = 00000004
-clock.714 = 00000003 # I²C
-clock.718 = 00000003
 clock.71c = 00000003 # UARTs
 clock.720 = 00000003
 # setup PCI interface
