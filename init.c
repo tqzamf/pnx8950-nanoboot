@@ -49,7 +49,7 @@ void _init(void) {
 	// ready to run C code in cached mode. enter main loop.
 	// this over-complicated way of calling forces the compiler to jump
 	// using an absolute address, so that it runs in KSEG0 (ie. cached)
-	// even if the bootloader was started in KSEG1 (ie. uncached).
+	// even though the bootloader starts in KSEG1 (ie. uncached).
 	void (*__main)(void) = _main;
 	asm volatile("" : "=r" (__main) : "r" (__main));
 	__main();
