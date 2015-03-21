@@ -96,6 +96,8 @@ static inline void init(void) {
 	CLOCK(500, 00000073); // MBS 1
 	CLOCK(504, 00000073); // MBS 3
 	CLOCK(708, 00000003); // unknown
+	CLOCK(714, 00000003); // I²C HP
+	CLOCK(718, 00000003); // I²C Fast
 	// some UART setup normally done by FlashReader
 	DECLARE_UART2;
 	UART2(000, 01060000); // flush buffers and configure for 8-bit
