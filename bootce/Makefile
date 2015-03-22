@@ -27,8 +27,8 @@ clean:
 %.gz %.uImage: %.ecw
 	gzip --best <$*.ecw >$*.gz
 	$(MKIMAGE) -A mips -O linux -T kernel -C gzip -n "$*" \
-		-a $$($(NM) $*.elf | awk -f get-entry-point.awk) \
 		-e $$($(NM) $*.elf | awk -f get-entry-point.awk) \
+		-a $$($(NM) $*.elf | awk -f get-load-addr.awk) \
 		-d $*.gz $@
 
 %.o: %.bin

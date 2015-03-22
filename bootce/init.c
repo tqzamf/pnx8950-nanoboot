@@ -31,9 +31,8 @@
 #define UART1(x, y) SET(BBE4, a, x, y)
 #define UART2(x, y) SET(BBE4, b, x, y)
 
-extern void _start(void);
 extern void __image_end(void);
-#define STACK_SIZE 0xf000
+extern void __image_start(void);
 
 static inline void init(void) {
 	// reset all PCI devices, because U-Boot leaves them in a state that
@@ -41,15 +40,15 @@ static inline void init(void) {
 	// of doing that, but it's a lot easier than writing a PCI driver.
 	RESET = ASSERT_SYS_RESET;
 
-	// clear memory. WinCE expects some areas to be zeroed. leave a
-	// WinCE-shaped hole so we don't overwrite ourselves, and don't kill
-	// our stack either.
+	// clear memory because WinCE expects some areas to be zeroed. leave a
+	// WinCE-shaped hole so we don't overwrite ourselves. no need to skip
+	// the stack though; that doesn't contain anything useful anyway.
 	#define INIT(from, to) \
-		for (uint32_t addr = (from); addr != (to); addr += 4) { \
+		for (uint32_t addr = (from); addr != (to); addr += 16) { \
 			uint32_t *word = (uint32_t *) addr; \
-			word[0] = 0; \
+			word[0] = 0; word[1] = 0; word[2] = 0; word[3] = 0; \
 		}
-	INIT(0x80000000, ((uint32_t) _start) - STACK_SIZE);
+	INIT(0x80000000, (uint32_t) __image_start);
 	INIT((uint32_t) __image_end, 0x88000000);
 	// not flushing cache here; it's pointless. data accesses to the
 	// cleared regions go through cache, which is self-consistent. and
@@ -72,9 +71,10 @@ static inline void init(void) {
 	configPR &= CPR_VALID;
 	MTC0_CONFIGPR(configPR);
 
-	// release system reset. memory clearing takes a while, so the PCI
+	// release system reset. memory clearing took a while, so the PCI
 	// devices should now be in a clean initial state that Windows CE
-	// can handle.
+	// can handle. the hardware init gives them some time to come out of
+	// reset before Windows CE wants to access them.
 	RESET = RELEASE_SYS_RESET;
 
 	// perform some extra hardware init that the original bootscript does
@@ -106,8 +106,8 @@ static inline void init(void) {
 	UART2(008, 00000005); // set baud rate to 38.4k, as by FlashReader
 	// UART1 is simpler. modem / flow control isn't connected, and we
 	// leave the baud rate as it is, even if it's wrong. UART1 is used
-	// for the kernel log only, so it's actually convenient if the baud
-	// rate doesn't have to be changed on the other end.
+	// for the kernel log only, so it's actually better if the baud rate
+	// doesn't have to be changed on the other end.
 	DECLARE_UART1;
 	UART1(000, 01060000); // flush / 8-bit
 	UART1(fe8, 00001fff); // interrupts
@@ -139,7 +139,7 @@ void _start(void) {
 	// flush cache, because U-Boot doesn't do that itself. there could
 	// be stale data in the cache without this flush.
 	cache_flush();
-	// set up a safe stack that won't be overwritten by memory clearing
+	// set up a safe stack that won't overwrite anything important
 	asm volatile("move $sp, %0" :: "r" (_start) : "memory");
 
 	// perform some hardware initialization that nanoboot omits

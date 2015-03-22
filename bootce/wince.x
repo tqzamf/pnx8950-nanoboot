@@ -4,6 +4,7 @@ ENTRY(_start)
 SECTIONS
 {
  .text 0x80100000 - 512 : AT (0x80100000 - 512) {
+   __image_start = .;
    LONG(0x57434530)
    LONG(__image_end - 0x80100000)
    LONG(0x57434530)
