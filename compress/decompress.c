@@ -38,20 +38,21 @@ int main(void) {
 	// unpack the data; this must be successful as well
 	unsigned long destlen;
 	unsigned long srclen;
+	printf("decompressing");
 	int err = puff((void *) image_load_base, &destlen,
 			(void *) packed_base, &srclen);
 	if (err != 0) {
-		printf("error: decompression status %d\n", err);
+		printf("\nerror: decompression status %d\n", err);
 		return 1;
 	}
 	// check that all input was consumed and all output generated
 	if (srclen != packed_size - sizeof(struct footer)) {
-		printf("error: input length mismatch %d != %d\n",
+		printf("\nerror: input length mismatch %d != %d\n",
 				srclen, packed_size - sizeof(struct footer));
 		return 1;
 	}
 	if (destlen != footer->destlen) {
-		printf("error: output length mismatch %d != %d\n",
+		printf("\nerror: output length mismatch %d != %d\n",
 				destlen, footer->destlen);
 		return 1;
 	}
@@ -59,7 +60,7 @@ int main(void) {
 	// check destination CRC, for good measure.
 	uint32_t destcrc = crc32(image_load_base, destlen);
 	if (destcrc != footer->destcrc) {
-		printf("error: output crc mismatch %08x != %08x\n",
+		printf("\nerror: output crc mismatch %08x != %08x\n",
 				destcrc, footer->destcrc);
 		return 1;
 	}
@@ -68,7 +69,13 @@ int main(void) {
 	// fill from Dcache, so for short images we could otherwise end up
 	// executing uninitialized memory.
 	cache_flush();
-	
+
+	// flush the progress indicator
+	printf("ok\n");
 	// if everything is fine, call the decompressed image.
 	return image_main();
+}
+
+void puff_tick(void) {
+	printf(".");
 }

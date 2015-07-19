@@ -754,6 +754,8 @@ int puff(unsigned char *dest,           /* pointer to data destination */
 			break;
 		}
 		if (err != 0) return err;   /* return with error */
+		// progress output
+		puff_tick();
 	} while (!last);
 
     /* update counters and return success */

@@ -33,3 +33,4 @@ int puff(unsigned char *dest,           /* pointer to destination */
          unsigned long *destlen,        /* output parameter: number of bytes written */
          unsigned char *source,         /* pointer to source data */
          unsigned long *srclen);        /* output parameter: number of bytes read */
+void puff_tick(void);
