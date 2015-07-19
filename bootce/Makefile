@@ -25,7 +25,7 @@ clean:
 	$(OC) -j .text -O binary $< $@
 
 %.gz %.uImage: %.ecw
-	gzip --best <$*.ecw >$*.gz
+	perl strip-header.pl <$*.ecw | gzip --best >$*.gz
 	$(MKIMAGE) -A mips -O linux -T kernel -C gzip -n "$*" \
 		-e $$($(NM) $*.elf | awk -f get-entry-point.awk) \
 		-a $$($(NM) $*.elf | awk -f get-load-addr.awk) \
