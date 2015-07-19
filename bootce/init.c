@@ -25,11 +25,11 @@
 #define DECLARE_GLOBAL2
 #define BBE6_BASE 0xbbe60000
 #define DECLARE_GLOBAL1 DECLARE(BBE6)
-#define CLOCK(x, y) SET(BBE4, 7, x, y)
-#define GLOBAL1(x, y) SET(BBE6, 3, x, y)
-#define GLOBAL2(x, y) SET(BBE4, d, x, y)
-#define UART1(x, y) SET(BBE4, a, x, y)
-#define UART2(x, y) SET(BBE4, b, x, y)
+#define CLOCK(x, y) SET(BBE4,7,x, y)
+#define GLOBAL1(x, y) SET(BBE6,3,x, y)
+#define GLOBAL2(x, y) SET(BBE4,D,x, y)
+#define UART1(x, y) SET(BBE4,A,x, y)
+#define UART2(x, y) SET(BBE4,B,x, y)
 
 extern void __image_end(void);
 extern void __image_start(void);
