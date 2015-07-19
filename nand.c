@@ -1,26 +1,41 @@
 #include <stdint.h>
 #include "hw.h"
+#include "status.h"
 #include "ecc.c"
 
 static uint32_t *nand_base uninitialized;
+static uint32_t xmodem_enabled uninitialized;
 
 export void nand_init(void) {
 	nand_base = (void *) FLASH_BASE;
+	xmodem_enabled = 0;
 }
 
-export int16_t nand_get_block(uint8_t *base, int expect_header) {
+export int16_t nand_get_block(uint8_t *base, int expect_header, int eof) {
+	// delegate to xmodem if enabled.
+	if (xmodem_enabled) {
+		// set LEDs to indicate data load source
+		LEDS_SET(1, 0);
+		return xmodem_get_block(base, expect_header, eof);
+	}
+
+	// if EOF expected, return immediately. there is no explicit EOF marker
+	// on flash.
+	if (eof)
+		return STATUS_EOF;
+
+	// end of file! we read the entire flash and found nothing, so try
+	// xmodem instead. note that the core is still responsible for
+	// re-initializing xmodem before each block!
+	// also skip NAND reading completely if SW1.1 = on, to allow recovery
+	// from an image that loads properly but then crashes.
+	if (nand_base > FLASH_END || SW11_STATUS() != 0) {
+		xmodem_enabled = 1;
+		return STATUS_EOF;
+	}
+	
 	uint8_t block = ((uint32_t) nand_base) >> 8;
 	uint8_t halfpage = block & 0x01;
-
-	if (SW11_STATUS() != 0)
-		// skip NAND reading if SW1.1 = on, to allow recovery from an
-		// image that loads properly but crashes.
-		return 0;
-
-	// end of file! we read the entire flash and found nothing...
-	// the core will generate an appropriate error message.
-	if (nand_base > FLASH_END)
-		return 0;
 
 	if ((block & 0x3f) == 0x3f) {
 		if (expect_header)
@@ -30,10 +45,10 @@ export int16_t nand_get_block(uint8_t *base, int expect_header) {
 		// timing:
 		// XIO takes ~20s to read 4096*16 pages, ie. ~3200 pages/sec.
 		// UART at 38.4kbaud can send ~4k chars/sec.
-		// thus we don't need to flush, ever. however we need some of
-		// that UART bandwidth for error reporting. theoretically, there
-		// can be up to 2 errors per page, but in reality there usually
-		// are none at all.
+		// thus we don't need to flush the progress indicators, ever.
+		// however we need some of that UART bandwidth for error
+		// reporting. theoretically, there can be up to 2 errors per
+		// page; in reality there usually are none.
 		// allowing for a generous ~800 chars/sec progress reporting, we
 		// can send an error every second half-page without overwhelming
 		// the UART. this corresponds to 64k errors across the device.
@@ -45,7 +60,7 @@ export int16_t nand_get_block(uint8_t *base, int expect_header) {
 		// than by UART speed. U-Boot takes ~256k, or 512 half-pages.
 		// printing a dot every 64 pages yields a comfortable 16 dots
 		// for loading all of U-Boot, and a convenient single space for
-		// the FlashReader preceding it.
+		// the FlashReader (if present) preceding it.
 	}
 
 	if (halfpage == 0) {
@@ -95,7 +110,7 @@ export int16_t nand_get_block(uint8_t *base, int expect_header) {
 
 	if (bbm != 0xff)
 		// OOB area byte 5 programmed: bad block; next one, please!
-		return -1;
+		return 0;
 	uint32_t ecc = (ecc0 << 14) | (ecc1 << 6) | (ecc2 >> 2);
 
 	// try to correct any errors that might have crept into the NAND
@@ -111,19 +126,20 @@ export int16_t nand_get_block(uint8_t *base, int expect_header) {
 		if (expect_header && !is_header(base))
 			// expecting a header block, but this isn't one yet.
 			// next one!
-			return -1;
+			return 0;
 		return 256;
 	
 	default:
 		UART_TX('U');
 
 		// uncorrectable error in the data area. that's a fatal error
-		// condition that we cannot recover from.
+		// condition that we cannot recover from. don't retry, don't
+		// call the image, but keep scanning for more headers.
 		if (!expect_header)
-			return 0;
+			return STATUS_ABORT;
 		// if we are still waiting for the header, we want the main loop
 		// to continue calling us until we finally find a valid header,
 		// or run out of pages to read.
-		return -1;
+		return 0;
 	}
 }

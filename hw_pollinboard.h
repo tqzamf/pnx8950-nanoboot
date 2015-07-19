@@ -15,11 +15,7 @@
 #define _XIO_FLASH_COMMAND (*((volatile uint16_t *) (_XIO_BASE + 0x830)))
 #define _XIO_FLASH_OPER    (*((volatile uint16_t *) (_XIO_BASE + 0x832)))
 #define FLASH_BASE ((volatile uint32_t *) 0xB0000000)
-// this is only half of the flash, but for some reason reading beyond
-// this point hangs the system. as the image is expected to be close to
-// the beginning of the flash, this isn't a big deal. it's just another
-// "BIOS cannot read beyond xyz" type bug...
-#define FLASH_END  ((volatile uint32_t *) 0xB1FFFFFF)
+#define FLASH_END  ((volatile uint32_t *) 0xB3FFFFFF)
 
 /****** timeout timer using GPIO timestamp timer ******/
 /**
@@ -84,18 +80,18 @@ static void UART_FLUSH(uint8_t ch) {
 
 /**
  * receive a single character from the serial line. if the given timeout
- * is exceeded, this macro performs a "return -1" from the calling
- * function.
+ * is exceeded, this macro performs a "return" from the calling function!
  * 
  * @param start start point of the timeout
  * @param timeout timeout in timer ticks
+ * @param retval value to return out of the calling function on timeout
  * @return the character that was read
  */
-#define UART_RX_TIMEOUT(start, timeout) \
+#define UART_RX_TIMEOUT(start, timeout, retval) \
 	({ \
 		do { \
 			if (TIMER_TIMED_OUT(start, timeout)) \
-				return -1; \
+				return retval; \
 		} while (((_UART_STATUS >> 8) & 31) == 0); \
 		register uint8_t ch = _UART_STATUS; \
 		_UART_CONTROL = (1 << 16) | (1 << 24); \

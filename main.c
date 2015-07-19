@@ -2,19 +2,15 @@
 
 #define export static inline
 
+#include "status.h"
 #include "hw.h"
 #include "cache.h"
 #include "header.h"
 #include "xmodem.c"
 #include "nand.c"
 
-static uint8_t xmodem_enabled uninitialized;
-
-static inline uint32_t get_block(uint8_t *base, int expect_header) {
-	if (xmodem_enabled)
-		return xmodem_get_block(base, expect_header);
-	else
-		return nand_get_block(base, expect_header);
+static inline uint32_t get_block(uint8_t *base, int expect_header, int eof) {
+	return nand_get_block(base, expect_header, eof);
 }
 
 static inline void call_image(uint32_t addr) {
@@ -25,73 +21,106 @@ static inline void call_image(uint32_t addr) {
 	LEDS_SET(0, 1);
 
 	// call image at its entry point, using an absolute-address jump.
-	void (*image)(void) = (void *) (addr | DRAM_BASE);
+	void (*image)(void) = (void *) addr;
 	image();
 
 	// we only ever get here when the image returns, which it doesn't
-	// generally do. however, we permit returning to the bootloader so
-	// that images can extend the bootloader.
+	// generally do. however, we permit returning to the bootloader to
+	// allow some degree of failsafe; the loader will just continue
+	// with the next image.
 	return;
 }
 
 #define INFINITY (0xffff0000)
 static inline void load_and_call_image(void) {
 	struct image_header *header = (void *) IMAGE_HEADER_BASE;
-	uint8_t *base = IMAGE_HEADER_BASE;
-	uint8_t *data_end = (void *) INFINITY;
+	uint32_t base = IMAGE_HEADER_BASE;
+	uint32_t data_end = INFINITY;
+	int expect_header = 1;
 
-	while (((uint32_t) base) < (((uint32_t) data_end) + 128)) {
-		// we intentionally try to read "beyond" end of file. this is
-		// harmless on flash, and gives xmodem a chance to end the
+	while (base <= data_end) {
+		// we intentionally try to read "beyond" end of file, by running the
+		// loop once more if base == data_end. flash detects this and just
+		// returns EOF immediately, but xmodem gets a chance to end the
 		// transfer cleanly.
-		int expect_header = ((uint32_t) data_end) == INFINITY;
+		// BOUNDARY CASE: if the image length is less than the file length,
+		// so that the xmodem client keeps sending data after the image is
+		// complete, that data will go unacknowledged because the image will
+		// already be running.
 
-		int16_t res = get_block(base, expect_header);
-		if (res == 0)
-			// serious error or end of file condition. don't retry.
-			// if this happens while waiting for the header, the normal
-			// fallback will start receiving an image over xmodem,
-			// thereby retrying xmodem but not flash reads.
-			break;
+		expect_header = base == IMAGE_HEADER_BASE;
+		int eof = base == data_end;
+		int16_t res = get_block((void *) base, expect_header, eof);
 		if (res < 0)
-			// invalid block. try again.
-			continue;
+			// transfer either aborted (STATUS_ABORT) or terminated 
+			// successfully (STATUS_EOF), but it doesn't make a
+			// difference: if the image is valid and complete, we can
+			// call it anyway, because any abort only affected the first
+			// block after the image. a true abort during the image
+			// leaves an incomplete image, and thus will never try to
+			// call it.
+			break;
 
-		if (expect_header)
-			// found a valid header. start getting data.
-			data_end = (void *) (IMAGE_LOAD_ADDR + header->length);
+		// correct block received; append the next one.
+		// note that invalid blocks just return zero, thus when they are
+		// treated as no-errors, they will advance the load address by
+		// 0 bytes, ie. retry the current block. this retry re-receives
+		// corrupted xmodem blocks and skips bad blocks in flash.
 		base += res;
+
+		if (base == IMAGE_HEADER_BASE + IMAGE_HEADER_SIZE) {
+			// a full, valid header has been received (all 512 bytes of
+			// it). begin receiving image data, starting at the load
+			// address, and keep going until the entire image has been
+			// received.
+			// note that this block is executed exactly once, unless the
+			// load address is set to zero. if someone actually does
+			// that, the loop will just harmlessly wait for another
+			// header.
+			base = header->loadaddr | DRAM_BASE;
+			data_end = base + header->length;
+		}
 	}
 
 	// add a linebreak to separate nanoboot progress output from the next
-	// stage. flush output before, because the UART drops new bytes if
+	// stage. also flush output first, because the UART drops new bytes if
 	// its buffer is full.
+	// this is called after every image load attempt, whether successful
+	// or not, thus visually separating the attempts.
 	UART_FLUSH();
 	UART_TX('\r');
 	UART_TX('\n');
-	// if the image is complete, try calling it. don't call an incomplete
-	// image; try to receive a new one instead. however, do try to call
-	// a complete image even on fatal errors. in that case, the error
-	// happened after the end of the image, and so is harmless.
-	if (((uint32_t) base) >= ((uint32_t) data_end))
-		call_image(header->entrypoint);
+	
+	// if the image is complete, try calling it, even if a fatal error
+	// has been reported: if the image is complete, the error was in the
+	// block behind it, and is thus harmless.
+	if (base >= data_end && !expect_header)
+		call_image(header->loadaddr | DRAM_BASE);
+	
+	// if the image returns (which is unusual but permitted), continue
+	// scanning for and loading the next image.
+	return;
 }
 
 void _main(void) __attribute__((noreturn, section(".init")));
 void _main(void) {
-	xmodem_enabled = 0;
+	// initialize flash reader to start of flash. smaller than having
+	// a single initialized variable in the .data section.
 	nand_init();
+	// clear any debris left by a system reboot.
 	UART_TX('\r');
 	UART_TX('\n');
 
 	for (;;) {
-		load_and_call_image();
-
-		// send "prompt" and turn on the red LED to signal that
-		// nanoboot is ready for Xmodem data.
-		LEDS_SET(1, 0);
-		UART_TX('X');
-		xmodem_enabled = 1;
+		// reset xmodem status. unnecessary while still reading flash,
+		// but harmless.
 		xmodem_init();
+		// try to load the image
+		load_and_call_image();
+		// some status output when an image returns or fails to load.
+		// this doesn't indicate xmodem readyness, but the LEDs already
+		// indicate that to the user and the NAKs indicate it to the
+		// xmodem client.
+		UART_TX('!');
 	}
 }
