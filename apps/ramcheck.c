@@ -72,8 +72,9 @@ int main(void) {
 		
 		// status
 		if (!err)
-			printf("OK");
-		printf("\n");
+			printf("OK\r");
+		else
+			printf("\n");
 	}
 	if (global_err)
 		printf("WARNING: errors detected! check log for details\n");

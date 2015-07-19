@@ -8,9 +8,9 @@ int main(void) {
 	// flush previous output, especially xmodem
 	printf("\nMIPS CP0 register dump\n");
 	
-	printf(" R");
+	printf("reg");
 	#define SEL(sel) \
-		printf("%9d", sel);
+		printf("    sel=%1d", sel);
 	#define SEL2(sel) \
 		SEL(sel+0); \
 		SEL(sel+1); \
@@ -23,7 +23,7 @@ int main(void) {
 	#define DUMP(reg,sel) \
 		printf(" %08x", MFC0(reg, sel));
 	#define DUMPS(reg) \
-		printf("%2d", reg); \
+		printf(" %2d", reg); \
 		DUMP(reg, 0); \
 		DUMP(reg, 1); \
 		DUMP(reg, 2); \
