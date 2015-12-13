@@ -6,6 +6,7 @@
 #include <err.h>
 #include <stdlib.h>
 
+#define TEST
 #include "ecc.c"
 
 static inline int affects(int errpos_byte, uint8_t errpos_bit) {
@@ -78,12 +79,13 @@ int main(int argc, char **argv) {
 		if (num_errors)
 			fprintf(stderr, "error: page %04xU has %d errors\n", page, num_errors);
 		
+#if 1
 		// test single-bit error correction. corrupt a bit and see if it gets
 		// corrected properly.
 		
 		uint8_t errpos_bit = 1 << (page & 0x7);
 		int errpos_byte = (page >> 3) % (512 + 16);
-		fprintf(stderr, "page %04x: corrupting %03x bit %02x\n",
+		fprintf(stdout, "page %04x: corrupting %03x bit %02x\n",
 				page, errpos_byte, errpos_bit);
 		int expect = affects(errpos_byte, errpos_bit);
 		int num_errors_lower = expect & 0xff;
@@ -119,7 +121,7 @@ int main(int argc, char **argv) {
 		int random = rand();
 		uint8_t errpos2_bit = 1 << (random & 0x7);
 		int errpos2_byte = (random >> 3) % (512 + 16);
-		fprintf(stderr, "page %04x: corrupting %03x bit %02x and %03x bit %02x\n",
+		fprintf(stdout, "page %04x: corrupting %03x bit %02x and %03x bit %02x\n",
 				page, errpos_byte, errpos_bit, errpos2_byte, errpos2_bit);
 		expect = affects(errpos_byte, errpos_bit);
 		num_errors_lower = expect & 0xff;
@@ -149,7 +151,8 @@ int main(int argc, char **argv) {
 		num_errors = ecc_correct(buffer + 256, ecc);
 		if (num_errors != num_errors_upper)
 			fprintf(stderr, "error: page %04xU has %d errors\n", page, num_errors);
-		
+#endif
+
 		page++;
 	}
 
