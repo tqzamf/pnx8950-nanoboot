@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import output.BinaryFormatter;
+import output.ImageFormatter;
 import output.BusPirateFormatter;
 import output.Formatter;
 import output.HexFormatter;
@@ -101,6 +102,9 @@ public class Compiler {
 					formatter = new HexFormatter();
 				else if (format.equalsIgnoreCase("bp"))
 					formatter = new BusPirateFormatter();
+				else if (format.equalsIgnoreCase("img")
+						|| format.equalsIgnoreCase("image"))
+					formatter = new ImageFormatter();
 				else
 					usage();
 			} else if (arg.startsWith("-"))
@@ -140,9 +144,9 @@ public class Compiler {
 		System.err.println("  -f format  set output format [hex]");
 		System.err.println("     bp      bus pirate commands");
 		System.err.println("     hex     hex pairs, space-separated");
+		System.err.println("     img     binary image for i2c installation");
 		System.err.println("     raw     raw binary");
 		System.err.println("  -v         verbose");
 		System.exit(1);
 	}
-
 }

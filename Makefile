@@ -10,7 +10,7 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin eecompile.jar nanoboot.bp ecctester
+TARGETS=boot.bin eecompile.jar nanoboot.bp nanoboot.raw install ecctester
 
 all: $(TARGETS)
 
@@ -25,6 +25,9 @@ eecompile.jar: eecompile/src/*.java eecompile/src/*/*.java eecompile/build.xml
 	chmod +x $@
 
 ecctester: ecctester.c
+	$(CC) $(CFLAGS) $(LDFLAGS) -mabicalls -mabi=32 -o $@ $^
+
+install: install.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -mabicalls -mabi=32 -o $@ $^
 
 # nanoboot
@@ -44,6 +47,9 @@ boot.uImage: boot.bin
 
 %.bp: %.ee boot.bin eecompile.jar
 	./eecompile.jar -O1 -fbp -o $@ -v $*.ee
+
+%.img: %.ee boot.bin eecompile.jar
+	./eecompile.jar -O1 -fimage -o $@ -v $*.ee
 
 # ...and rules for C and assembly files
 

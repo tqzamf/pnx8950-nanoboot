@@ -5,10 +5,12 @@ eecompile.jar
 *.uImage
 *.aelf
 *.bp
+*.img
 *.s
 *.o
 boot.elf
 boot.bin
+install
 ecctester
 bootce/wince?.bin
 bootce/wince?.gz

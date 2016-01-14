@@ -1,4 +1,4 @@
-## Installing nanoboot on the Pollinux board
+## Installing nanoboot on the Pollinux board (using the bus pirate)
 
 * build nanoboot (obviously). this is just `make clean all`.
 * solder pin headers onto U11. pins 5 .. 8 should be enough; GND (pin 5) requires a high-power soldering iron.
@@ -11,7 +11,17 @@
 
 the board is now unbrickable (but not indestructible). the steps above can be repeated easily if the EEPROM does get corrupted. if any further step in the boot chain fails, switch SW1.1 to ON and upload something (probably U-Boot) over Xmodem.
 
-if the bus pirate shows errors during reprogramming, then probably the boot module hangs and thus the I²C bus is blocked. just hold the reset button during the entire programming process and things should work. if holding reset powers down the board, power it up while holding reset and program it while keeping reset pressed.
+if the bus pirate shows errors during reprogramming, then probably the boot module hangs and thus the I²C bus is blocked. just hold the reset button during the entire programming process and things should work. if holding reset powers down the board, power it up while holding reset and keep holding reset while programing.
+
+## Installing nanoboot from within Linux
+
+* build nanoboot (obviously). this is just `make clean all`.
+* upload `install` and `nanoboot.img` to the board, eg. using `scp` or a USB flash drive.
+* run `sudo ./install nanoboot.img`. the command should not time out; if it does, run it again until it reports `ok (xxx bytes)`.
+* short U11 pins 7/8 to prevents accidental reprogramming, eg. by soldering a pinheader and installing a jumper.
+* press the reset button
+
+if this process fails after it has started to write something, and re-running the installer doesn't help, it is definitely *not* a good idea to reset or reboot the board because it probably won't come back up. it can, however, be easily de-bricked using the bus pirate.
 
 ## Installing U-Boot using nanoboot
 
