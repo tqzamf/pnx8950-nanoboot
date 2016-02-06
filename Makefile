@@ -10,7 +10,7 @@ CPP=mipsel-linux-gnu-cpp
 OC=mipsel-linux-gnu-objcopy
 NM=mipsel-linux-gnu-nm
 MKIMAGE=mkimage
-TARGETS=boot.bin eecompile.jar nanoboot.bp nanoboot.raw install ecctester
+TARGETS=boot.bin eecompile.jar nanoboot.bp nanoboot.img install ecctester
 
 all: $(TARGETS)
 
