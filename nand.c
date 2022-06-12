@@ -33,7 +33,7 @@ export int16_t nand_get_block(uint8_t *base, int expect_header, int eof) {
 		xmodem_enabled = 1;
 		return STATUS_EOF;
 	}
-	
+
 	uint8_t block = ((uint32_t) nand_base) >> 8;
 	uint8_t halfpage = block & 0x01;
 
@@ -82,6 +82,9 @@ export int16_t nand_get_block(uint8_t *base, int expect_header, int eof) {
 		// and probably also avoids repeating the page read operation by
 		// the flash itself. it also means that we don't have to
 		// increment the nand address because it isn't sent anyway.
+		// also, don't bother to read the second half of the OOB area. all
+		// important bytes are in the first 8 bytes. this also keeps the
+		// flash from starting to read the next page unnecessarily.
 		XIO_SELECT_SEQUENTIAL();
 		for (uint32_t pos = 1; pos < 512/4 + 8/4; pos++)
 			buffer[pos] = *nand_base;
@@ -106,6 +109,7 @@ export int16_t nand_get_block(uint8_t *base, int expect_header, int eof) {
 	// also used to determine which half-page we're at!
 	// doing it after reading the ECC saves a bit of space because GCC
 	// can combine the IF statements...
+	// note: the hardware ignores A8, as documented in the PNX17xx docs.
 	nand_base += 256/4;
 
 	if (bbm != 0xff)
@@ -115,7 +119,7 @@ export int16_t nand_get_block(uint8_t *base, int expect_header, int eof) {
 
 	// try to correct any errors that might have crept into the NAND
 	// data. ECC can correct any single-bit error, but if the block
-	// isn't refreshed soo, it might develop an uncorrectable 2-bit
+	// isn't refreshed soon, it might develop an uncorrectable 2-bit
 	// error. therefore, emit a warning even on single-bit errors.
 	uint32_t num_errors = ecc_correct(base, ecc);
 	switch (num_errors) {
@@ -128,7 +132,7 @@ export int16_t nand_get_block(uint8_t *base, int expect_header, int eof) {
 			// next one!
 			return 0;
 		return 256;
-	
+
 	default:
 		UART_TX('U');
 
